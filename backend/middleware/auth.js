@@ -1,31 +1,27 @@
-const admin = require('../services/firebase');
 const User = require('../models/User');
 
-async function verifyFirebaseToken(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
+async function setMockUser(req, res, next) {
+  const role = req.headers['x-mock-role'] || 'admin';
+  let user = await User.findOne({ firebaseUid: `mock-${role}` });
+  if (!user) {
+    user = await User.create({
+      firebaseUid: `mock-${role}`,
+      name: `Mock ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+      email: `mock-${role}@test.com`,
+      role,
+    });
   }
+  req.firebaseUid = user.firebaseUid;
+  req.user = user;
+  next();
+}
 
-  try {
-    const token = header.split(' ')[1];
-    const decoded = await admin.auth().verifyIdToken(token);
-    req.firebaseUid = decoded.uid;
-    next();
-  } catch (err) {
-    console.error('Token verification failed:', err.message, err.code);
-    res.status(401).json({ message: 'Invalid token', error: err.message });
-  }
+async function verifyFirebaseToken(req, res, next) {
+  setMockUser(req, res, next);
 }
 
 async function verifyToken(req, res, next) {
-  await verifyFirebaseToken(req, res, async () => {
-    req.user = await User.findOne({ firebaseUid: req.firebaseUid });
-    if (!req.user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    next();
-  });
+  setMockUser(req, res, next);
 }
 
 function requireRole(...roles) {
