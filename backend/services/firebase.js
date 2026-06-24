@@ -4,7 +4,7 @@ const config = require('../config');
 const serviceAccount = require(config.firebaseServiceAccountPath);
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.cert(serviceAccount),
 });
 
 module.exports = admin;
