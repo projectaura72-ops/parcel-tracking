@@ -13,6 +13,7 @@ async function verifyFirebaseToken(req, res, next) {
     req.firebaseUid = decoded.uid;
     next();
   } catch (err) {
+    console.error('Token verification failed:', err.message, err.code);
     res.status(401).json({ message: 'Invalid token', error: err.message });
   }
 }
