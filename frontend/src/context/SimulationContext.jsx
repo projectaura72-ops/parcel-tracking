@@ -73,7 +73,7 @@ export function SimulationProvider({ children }) {
 
   const removeWaypoint = (index) => {
     setWaypoints((prev) => {
-      if (prev.length <= 2) return prev;
+      if (prev.length <= 1) return prev;
       return prev.filter((_, i) => i !== index);
     });
   };
