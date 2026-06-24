@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+.env
+*.env
+!*.env.example
+
+# Credential files
+parcel-tracking-320f5-firebase-adminsdk-fbsvc-a2b1777963.json
+atlas-credentials.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
