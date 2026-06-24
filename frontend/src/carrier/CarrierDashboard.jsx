@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useGeolocation } from '../hooks/useGeolocation';
-import TrackingMap from '../components/TrackingMap';
+import { useAuth } from '../context/AuthContext';
 
 export default function CarrierDashboard() {
   const [parcels, setParcels] = useState([]);
@@ -10,6 +10,7 @@ export default function CarrierDashboard() {
   const [showClaim, setShowClaim] = useState(false);
   const { position } = useGeolocation();
   const socket = useSocket();
+  const { profile } = useAuth();
 
   useEffect(() => {
     const fetchParcels = async () => {
@@ -27,10 +28,11 @@ export default function CarrierDashboard() {
           parcelId: p._id,
           lat: position.lat,
           lng: position.lng,
+          carrierName: profile?.name || 'Carrier',
         });
       }
     });
-  }, [position, socket, parcels]);
+  }, [position, socket, parcels, profile]);
 
   useEffect(() => {
     if (!position) return;
@@ -121,7 +123,10 @@ export default function CarrierDashboard() {
               </span>
             </div>
 
-            <TrackingMap position={p.currentLocation || position} route={p.route} height="h-[30vh]" />
+            <div className="bg-gray-50 rounded-lg p-4 mb-2">
+              <p className="text-sm font-medium">Destination: {p.destination}</p>
+              <p className="text-xs text-gray-400">Origin: {p.origin}</p>
+            </div>
 
             <div className="flex gap-2 mt-3">
               {p.status === 'pending' && (

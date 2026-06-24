@@ -5,9 +5,17 @@ const locationSchema = new mongoose.Schema({
   lng: { type: Number, required: true },
 }, { _id: false });
 
-const routePointSchema = new mongoose.Schema({
+const segmentPointSchema = new mongoose.Schema({
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
+  timestamp: { type: Date, default: Date.now },
+}, { _id: false });
+
+const routeSegmentSchema = new mongoose.Schema({
+  carrierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  carrierName: { type: String },
+  color: { type: String },
+  points: [segmentPointSchema],
 }, { _id: false });
 
 const parcelSchema = new mongoose.Schema({
@@ -25,7 +33,7 @@ const parcelSchema = new mongoose.Schema({
   origin: { type: String, required: true },
   destination: { type: String, required: true },
   currentLocation: locationSchema,
-  route: [routePointSchema],
+  routeSegments: [routeSegmentSchema],
   estimatedDelivery: { type: Date },
   deliveredAt: { type: Date },
 }, { timestamps: true });

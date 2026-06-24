@@ -2,6 +2,36 @@ const TrackingHistory = require('../models/TrackingHistory');
 const Parcel = require('../models/Parcel');
 
 const userSockets = new Map();
+const CARRIER_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4'];
+const colorIndex = {};
+
+function getCarrierColor(carrierId) {
+  if (!colorIndex[carrierId]) {
+    const used = Object.values(colorIndex);
+    const available = CARRIER_COLORS.find((c) => !used.includes(c));
+    colorIndex[carrierId] = available || CARRIER_COLORS[Object.keys(colorIndex).length % CARRIER_COLORS.length];
+  }
+  return colorIndex[carrierId];
+}
+
+async function addRoutePoint(parcelId, carrierId, carrierName, lat, lng) {
+  const parcel = await Parcel.findById(parcelId);
+  if (!parcel) return;
+
+  let segment = parcel.routeSegments.find(
+    (s) => s.carrierId && s.carrierId.toString() === carrierId
+  );
+
+  if (!segment) {
+    const color = getCarrierColor(carrierId);
+    segment = { carrierId, carrierName, color, points: [] };
+    parcel.routeSegments.push(segment);
+  }
+
+  segment.points.push({ lat, lng, timestamp: new Date() });
+  parcel.currentLocation = { lat, lng };
+  await parcel.save();
+}
 
 function setupSocket(io) {
   io.on('connection', (socket) => {
@@ -14,32 +44,20 @@ function setupSocket(io) {
 
     socket.on('location:update', async (data) => {
       const { parcelId, lat, lng, carrierId } = data;
+      const carrierName = data.carrierName || 'Unknown';
 
       try {
-        const parcel = await Parcel.findByIdAndUpdate(
-          parcelId,
-          { currentLocation: { lat, lng }, status: 'in_transit' },
-          { new: true }
-        );
-
-        if (!parcel) return;
+        await addRoutePoint(parcelId, carrierId || socket.userId, carrierName, lat, lng);
 
         await TrackingHistory.create({
           parcelId,
-          carrierId,
+          carrierId: carrierId || socket.userId,
           status: 'in_transit',
           location: { lat, lng },
           message: `Location updated to [${lat}, ${lng}]`,
         });
 
         io.emit(`parcel:location:${parcelId}`, { lat, lng, parcelId });
-
-        if (parcel.ownerId) {
-          const ownerSocketId = userSockets.get(parcel.ownerId.toString());
-          if (ownerSocketId) {
-            io.to(ownerSocketId).emit('location:update', { parcelId, lat, lng });
-          }
-        }
       } catch (err) {
         socket.emit('error', { message: err.message });
       }
@@ -66,17 +84,6 @@ function setupSocket(io) {
         });
 
         io.emit(`parcel:status:${parcelId}`, { parcelId, status, message });
-
-        if (parcel.ownerId) {
-          const ownerSocketId = userSockets.get(parcel.ownerId.toString());
-          if (ownerSocketId) {
-            io.to(ownerSocketId).emit('notification:new', {
-              parcelId,
-              status,
-              message: message || `Parcel status updated to ${status}`,
-            });
-          }
-        }
       } catch (err) {
         socket.emit('error', { message: err.message });
       }

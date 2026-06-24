@@ -88,13 +88,22 @@ export default function OwnerDashboard() {
         <div className="lg:col-span-2">
           {selected ? (
             <>
-              <TrackingMap position={selected.currentLocation} route={selected.route} />
-              <div className="bg-white p-4 rounded-lg shadow mt-4">
-                <h2 className="font-bold text-lg">{selected.name}</h2>
-                <p className="text-lg font-mono tracking-widest text-blue-600">{selected.trackingNumber}</p>
-                <p className="text-sm">Status: <span className="capitalize font-semibold">{selected.status}</span></p>
-                <p className="text-sm">From: {selected.origin} → To: {selected.destination}</p>
-                <p className="text-sm">Carrier: {selected.currentCarrier?.name || 'Not assigned'}</p>
+              <TrackingMap
+                position={selected.currentLocation}
+                routeSegments={selected.routeSegments || []}
+              />
+              <div className="bg-white p-4 rounded-lg shadow mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <h2 className="font-bold text-lg">{selected.name}</h2>
+                  <p className="text-lg font-mono tracking-widest text-blue-600">{selected.trackingNumber}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm">Status: <span className="capitalize font-semibold">{selected.status}</span></p>
+                  <p className="text-sm">Carrier: {selected.currentCarrier?.name || 'Not assigned'}</p>
+                </div>
+                <div className="col-span-2 text-sm text-gray-500">
+                  <p>From: {selected.origin} → To: {selected.destination}</p>
+                </div>
               </div>
             </>
           ) : (
