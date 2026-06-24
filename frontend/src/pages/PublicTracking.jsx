@@ -33,7 +33,7 @@ export default function PublicTracking() {
         <h1 className="text-2xl font-bold mb-2">Tracking: {parcel.trackingNumber}</h1>
         <p className="text-gray-500 mb-4">Status: <span className="font-semibold capitalize">{parcel.status}</span></p>
 
-        <div className="bg-white rounded-lg shadow h-80 mb-6">
+        <div className="bg-white rounded-lg shadow h-[55vh] mb-6">
           {parcel.currentLocation && (
             <MapContainer center={[parcel.currentLocation.lat, parcel.currentLocation.lng]} zoom={13} className="h-full w-full rounded-lg">
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

@@ -121,7 +121,7 @@ export default function CarrierDashboard() {
               </span>
             </div>
 
-            <TrackingMap position={p.currentLocation || position} route={p.route} height="h-40" />
+            <TrackingMap position={p.currentLocation || position} route={p.route} height="h-[30vh]" />
 
             <div className="flex gap-2 mt-3">
               {p.status === 'pending' && (

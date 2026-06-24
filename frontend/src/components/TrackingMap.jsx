@@ -3,7 +3,7 @@ import L from 'leaflet';
 
 const icon = L.icon({ iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41] });
 
-export default function TrackingMap({ position, route = [], height = 'h-80' }) {
+export default function TrackingMap({ position, route = [], height = 'h-[55vh]' }) {
   if (!position) return <div className={`${height} bg-gray-200 rounded-lg flex items-center justify-center text-gray-400`}>No location data</div>;
 
   const pos = [position.lat, position.lng];

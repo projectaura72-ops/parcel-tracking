@@ -98,7 +98,7 @@ export default function OwnerDashboard() {
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-lg shadow h-80 flex items-center justify-center text-gray-400">
+            <div className="bg-white rounded-lg shadow h-[55vh] flex items-center justify-center text-gray-400">
               Select a parcel to view tracking
             </div>
           )}
