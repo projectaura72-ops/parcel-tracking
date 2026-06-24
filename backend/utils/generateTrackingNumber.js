@@ -1,12 +1,9 @@
-const Parcel = require('../models/Parcel');
+const { v4: uuidv4 } = require('uuid');
 
-async function generateTrackingNumber() {
-  for (let i = 0; i < 10; i++) {
-    const num = Math.floor(10000 + Math.random() * 90000);
-    const exists = await Parcel.findOne({ trackingNumber: String(num) });
-    if (!exists) return String(num);
-  }
-  throw new Error('Could not generate unique tracking number');
+function generateTrackingNumber() {
+  const prefix = 'GT';
+  const suffix = uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase();
+  return `${prefix}${suffix}`;
 }
 
 module.exports = { generateTrackingNumber };

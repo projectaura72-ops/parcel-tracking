@@ -39,9 +39,9 @@ export default function CarrierDashboard() {
   }, [sendLocation, position]);
 
   const handleClaim = async () => {
-    if (trackingCode.length !== 5) return;
+    if (!trackingCode.trim()) return;
     try {
-      const { data } = await api.post('/carriers/scan', { trackingNumber: trackingCode });
+      const { data } = await api.post('/carriers/scan', { trackingNumber: trackingCode.trim().toUpperCase() });
       setParcels((prev) => [data, ...prev]);
       setTrackingCode('');
       setShowClaim(false);
@@ -83,21 +83,20 @@ export default function CarrierDashboard() {
       {showClaim && (
         <div className="bg-white p-4 rounded-lg shadow mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Enter 5-digit tracking code
+            Enter tracking code
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              maxLength={5}
-              placeholder="00000"
+              placeholder="e.g. GT1A2B3C4D"
               value={trackingCode}
-              onChange={(e) => setTrackingCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-              className="border rounded px-3 py-2 w-40 text-center text-lg tracking-widest font-mono"
+              onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
+              className="border rounded px-3 py-2 w-48 text-center tracking-widest font-mono uppercase"
               onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
             />
             <button
               onClick={handleClaim}
-              disabled={trackingCode.length !== 5}
+              disabled={!trackingCode.trim()}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
             >
               Claim
