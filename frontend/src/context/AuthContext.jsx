@@ -1,6 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { createContext, useContext, useState } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -8,32 +6,30 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        localStorage.setItem('token', token);
-        try {
-          const { data } = await api.get('/auth/me');
-          setProfile(data);
-        } catch {
-          setProfile(null);
-        }
-      } else {
-        localStorage.removeItem('token');
-        setProfile(null);
-      }
-      setLoading(false);
-    });
+  const setRole = async (role) => {
+    setLoading(true);
+    localStorage.setItem('mockRole', role);
+    try {
+      const { data } = await api.get('/auth/me', { headers: { 'x-mock-role': role } });
+      setProfile(data);
+      setUser({ uid: data.firebaseUid });
+    } catch {
+      setProfile(null);
+      setUser(null);
+    }
+    setLoading(false);
+  };
 
-    return unsubscribe;
-  }, []);
+  const logout = () => {
+    localStorage.removeItem('mockRole');
+    setUser(null);
+    setProfile(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading }}>
+    <AuthContext.Provider value={{ user, profile, loading, setRole, logout }}>
       {children}
     </AuthContext.Provider>
   );

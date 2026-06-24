@@ -1,52 +1,37 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const roles = [
+  { key: 'owner', label: 'Parcel Owner', emoji: '📦' },
+  { key: 'carrier', label: 'Carrier', emoji: '🚚' },
+  { key: 'admin', label: 'Admin', emoji: '⚙️' },
+];
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { setRole } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/');
-    } catch (err) {
-      setError(err.message);
-    }
+  const handleSelect = async (role) => {
+    await setRole(role);
+    navigate('/');
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center">GoodsTracker</h1>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-3"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-4"
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Sign In
-        </button>
-        <p className="text-sm text-center mt-4">
-          Don't have an account? <Link to="/register" className="text-blue-600">Register</Link>
-        </p>
-      </form>
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
+        <h1 className="text-2xl font-bold mb-2 text-center">GoodsTracker</h1>
+        <p className="text-gray-500 text-sm text-center mb-6">Select a role to continue</p>
+        {roles.map((r) => (
+          <button
+            key={r.key}
+            onClick={() => handleSelect(r.key)}
+            className="w-full text-left px-4 py-3 mb-2 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition flex items-center gap-3"
+          >
+            <span className="text-2xl">{r.emoji}</span>
+            <span className="font-medium">{r.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
