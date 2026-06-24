@@ -16,6 +16,24 @@ const routeSegmentSchema = new mongoose.Schema({
   carrierName: { type: String },
   color: { type: String },
   points: [segmentPointSchema],
+  status: { type: String, enum: ['active', 'completed'], default: 'active' },
+  fromLabel: { type: String },
+  toLabel: { type: String },
+}, { _id: false });
+
+const simulationWaypointSchema = new mongoose.Schema({
+  label: { type: String, required: true },
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+  transportMode: { type: String, enum: ['truck', 'ship', 'plane'], default: 'truck' },
+}, { _id: false });
+
+const simulationSegmentSchema = new mongoose.Schema({
+  carrierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  carrierName: { type: String },
+  color: { type: String },
+  waypoints: [simulationWaypointSchema],
+  status: { type: String, enum: ['planned', 'active', 'completed'], default: 'planned' },
 }, { _id: false });
 
 const parcelSchema = new mongoose.Schema({
@@ -34,6 +52,7 @@ const parcelSchema = new mongoose.Schema({
   destination: { type: String, required: true },
   currentLocation: locationSchema,
   routeSegments: [routeSegmentSchema],
+  simulationSegments: [simulationSegmentSchema],
   estimatedDelivery: { type: Date },
   deliveredAt: { type: Date },
 }, { timestamps: true });
