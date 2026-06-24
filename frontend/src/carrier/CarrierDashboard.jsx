@@ -6,8 +6,8 @@ import TrackingMap from '../components/TrackingMap';
 
 export default function CarrierDashboard() {
   const [parcels, setParcels] = useState([]);
-  const [showScanner, setShowScanner] = useState(false);
-  const [qrData, setQrData] = useState('');
+  const [trackingCode, setTrackingCode] = useState('');
+  const [showClaim, setShowClaim] = useState(false);
   const { position } = useGeolocation();
   const socket = useSocket();
 
@@ -38,15 +38,16 @@ export default function CarrierDashboard() {
     return () => clearInterval(interval);
   }, [sendLocation, position]);
 
-  const handleScan = async () => {
+  const handleClaim = async () => {
+    if (trackingCode.length !== 5) return;
     try {
-      const { data } = await api.post('/carriers/scan', { trackingNumber: qrData });
+      const { data } = await api.post('/carriers/scan', { trackingNumber: trackingCode });
       setParcels((prev) => [data, ...prev]);
-      setQrData('');
-      setShowScanner(false);
+      setTrackingCode('');
+      setShowClaim(false);
       alert('Parcel claimed!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Error scanning parcel');
+      alert(err.response?.data?.message || 'Error claiming parcel');
     }
   };
 
@@ -73,24 +74,35 @@ export default function CarrierDashboard() {
       )}
 
       <button
-        onClick={() => setShowScanner(!showScanner)}
+        onClick={() => setShowClaim(!showClaim)}
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
       >
-        {showScanner ? 'Close Scanner' : 'Scan QR Code'}
+        {showClaim ? 'Cancel' : 'Claim Parcel'}
       </button>
 
-      {showScanner && (
+      {showClaim && (
         <div className="bg-white p-4 rounded-lg shadow mb-4">
-          <input
-            type="text"
-            placeholder="Enter tracking number manually"
-            value={qrData}
-            onChange={(e) => setQrData(e.target.value)}
-            className="border rounded px-3 py-2 w-full mb-2"
-          />
-          <button onClick={handleScan} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-            Claim Parcel
-          </button>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Enter 5-digit tracking code
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              maxLength={5}
+              placeholder="00000"
+              value={trackingCode}
+              onChange={(e) => setTrackingCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+              className="border rounded px-3 py-2 w-40 text-center text-lg tracking-widest font-mono"
+              onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
+            />
+            <button
+              onClick={handleClaim}
+              disabled={trackingCode.length !== 5}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              Claim
+            </button>
+          </div>
         </div>
       )}
 
@@ -100,7 +112,7 @@ export default function CarrierDashboard() {
             <div className="flex justify-between items-start mb-2">
               <div>
                 <p className="font-semibold">{p.name}</p>
-                <p className="text-xs text-gray-400">{p.trackingNumber}</p>
+                <p className="text-xs text-gray-400 font-mono">{p.trackingNumber}</p>
               </div>
               <span className={`text-xs px-2 py-1 rounded capitalize ${
                 p.status === 'delivered' ? 'bg-green-100 text-green-700' :

@@ -78,7 +78,7 @@ export default function OwnerDashboard() {
               }`}
             >
               <p className="font-semibold">{p.name}</p>
-              <p className="text-xs text-gray-400">{p.trackingNumber}</p>
+              <p className="text-xs text-gray-400 font-mono tracking-widest">{p.trackingNumber}</p>
               <p className="text-xs capitalize mt-1">{p.status.replace('_', ' ')}</p>
             </div>
           ))}
@@ -91,7 +91,7 @@ export default function OwnerDashboard() {
               <TrackingMap position={selected.currentLocation} route={selected.route} />
               <div className="bg-white p-4 rounded-lg shadow mt-4">
                 <h2 className="font-bold text-lg">{selected.name}</h2>
-                <p className="text-sm text-gray-500">Tracking: {selected.trackingNumber}</p>
+                <p className="text-lg font-mono tracking-widest text-blue-600">{selected.trackingNumber}</p>
                 <p className="text-sm">Status: <span className="capitalize font-semibold">{selected.status}</span></p>
                 <p className="text-sm">From: {selected.origin} → To: {selected.destination}</p>
                 <p className="text-sm">Carrier: {selected.currentCarrier?.name || 'Not assigned'}</p>

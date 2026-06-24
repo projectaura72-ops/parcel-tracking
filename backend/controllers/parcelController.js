@@ -5,7 +5,7 @@ const { generateTrackingNumber } = require('../utils/generateTrackingNumber');
 exports.createParcel = async (req, res, next) => {
   try {
     const { name, description, origin, destination, estimatedDelivery } = req.body;
-    const trackingNumber = generateTrackingNumber();
+    const trackingNumber = await generateTrackingNumber();
 
     const parcel = await Parcel.create({
       trackingNumber,
