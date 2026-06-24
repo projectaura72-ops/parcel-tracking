@@ -19,7 +19,7 @@ export default function CarrierDashboard() {
   const { profile } = useAuth();
   const {
     simMode, waypoints, previousSegments, saveRoute, loadSimulationSegments,
-    startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, clearWaypoints
+    startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
   const activeUserId = simMode && simOverride ? simOverride : profile?._id;
@@ -401,6 +401,21 @@ export default function CarrierDashboard() {
                       >
                         Stop
                       </button>
+                      <div className="flex items-center gap-1 border-l pl-2 ml-1">
+                        {[1, 2, 5, 10].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setSpeed(s)}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              speed === s
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {s}x
+                          </button>
+                        ))}
+                      </div>
                       <button
                         onClick={clearWaypoints}
                         disabled={simulating}

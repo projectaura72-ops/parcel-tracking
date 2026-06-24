@@ -25,6 +25,9 @@ export function SimulationProvider({ children }) {
   const [simulating, setSimulating] = useState(false);
   const [currentSimIndex, setCurrentSimIndex] = useState(0);
   const [simParcelId, setSimParcelId] = useState(null);
+  const [speed, setSpeed] = useState(1);
+  const speedRef = useRef(1);
+  speedRef.current = speed;
   const timerRef = useRef(null);
 
   const toggleMode = () => setSimMode((m) => !m);
@@ -125,7 +128,7 @@ export function SimulationProvider({ children }) {
     advance();
 
     timerRef.current = setInterval(() => {
-      step++;
+      step += speedRef.current;
       const fraction = step / steps;
       const pos = interpolate(from, to, Math.min(fraction, 1));
       setCurrentSimIndex(segStart + fraction);
@@ -166,7 +169,7 @@ export function SimulationProvider({ children }) {
       simMode, toggleMode,
       previousSegments,
       waypoints, setWaypoints, addWaypoint, updateWaypoint, removeWaypoint, clearWaypoints, saveRoute,
-      simulating, currentSimIndex, simParcelId,
+      simulating, currentSimIndex, simParcelId, speed, setSpeed,
       loadSimulationSegments, startSimulation, stopSimulation,
     }}>
       {children}
