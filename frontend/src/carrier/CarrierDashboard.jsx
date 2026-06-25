@@ -14,6 +14,9 @@ export default function CarrierDashboard() {
   const [showClaim, setShowClaim] = useState(false);
   const [carriers, setCarriers] = useState([]);
   const [simOverride, setSimOverride] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { position } = useGeolocation();
   const socket = useSocket();
   const { profile } = useAuth();
@@ -164,23 +167,47 @@ export default function CarrierDashboard() {
 
   const handleSaveRoute = async () => {
     if (!selected) return;
-    const cId = simOverride || profile?._id;
-    const cName = allCarriers.find((c) => c._id === cId)?.name || profile?.name;
-    await saveRoute(selected.trackingNumber, cId, cName);
-    alert('Route saved!');
+    setIsSaving(true);
+    try {
+      const cId = simOverride || profile?._id;
+      const cName = allCarriers.find((c) => c._id === cId)?.name || profile?.name;
+      await saveRoute(selected.trackingNumber, cId, cName);
+      alert('Route saved!');
+    } catch (err) {
+      alert('Unable to save route. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleStartSim = async () => {
     if (!selected) return;
+    setIsStarting(true);
     const cId = simOverride || profile?._id;
-    await startSimulation(selected._id, selected.trackingNumber, socket, cId);
+    try {
+      const started = await startSimulation(selected._id, selected.trackingNumber, socket, cId);
+      if (!started) {
+        alert('Unable to start simulation. Check your route and try again.');
+      }
+    } catch {
+      alert('Unable to start simulation. Please try again.');
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   const handleStopSim = async () => {
     if (!selected) return;
+    setIsStopping(true);
     const cId = simOverride || profile?._id;
-    await stopSimulation(selected.trackingNumber, cId);
-    fetchParcels();
+    try {
+      await stopSimulation(selected.trackingNumber, cId);
+      await fetchParcels();
+    } catch {
+      alert('Unable to stop simulation. Please try again.');
+    } finally {
+      setIsStopping(false);
+    }
   };
 
   const isCurrentCarrier = (parcel) => {
@@ -246,9 +273,9 @@ export default function CarrierDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
         {/* LEFT: All controls */}
-        <div className="lg:col-span-1 flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm min-h-0">
+        <div className="lg:w-[360px] flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm min-h-0">
           <div className="space-y-3">
             <button
               onClick={() => setShowClaim(!showClaim)}
@@ -380,31 +407,25 @@ export default function CarrierDashboard() {
                 {simMode && (
                   <>
                     <button onClick={handleSaveRoute}
-                      disabled={waypoints.length < 2 || simulating}
+                      disabled={waypoints.length < 2 || simulating || isSaving}
                       className="bg-blue-600 text-white px-2 py-1 text-[11px] rounded hover:bg-blue-700 disabled:opacity-50">
-                      Save
+                      {isSaving ? 'Saving...' : 'Save'}
                     </button>
                     <button onClick={handleStartSim}
-                      disabled={waypoints.length < 2 || simulating}
+                      disabled={waypoints.length < 2 || simulating || isStarting}
                       className="bg-green-600 text-white px-2 py-1 text-[11px] rounded hover:bg-green-700 disabled:opacity-50">
-                      {simulating ? 'Run...' : 'Start'}
+                      {isStarting ? 'Starting...' : simulating ? 'Running...' : 'Start'}
                     </button>
                     <button onClick={handleStopSim}
-                      disabled={!simulating}
+                      disabled={!simulating || isStopping}
                       className="bg-red-600 text-white px-2 py-1 text-[11px] rounded hover:bg-red-700 disabled:opacity-50">
-                      Stop
+                      {isStopping ? 'Stopping...' : 'Stop'}
                     </button>
                     <button onClick={clearWaypoints}
                       disabled={simulating}
                       className="bg-gray-500 text-white px-2 py-1 text-[11px] rounded hover:bg-gray-600 disabled:opacity-50">
                       Clear
                     </button>
-                    {!simulating && waypoints.length >= 2 && (
-                      <button onClick={() => handleCompleteSegment(selected._id)}
-                        className="bg-yellow-600 text-white px-2 py-1 text-[11px] rounded hover:bg-yellow-700">
-                        Complete
-                      </button>
-                    )}
                   </>
                 )}
               </div>
@@ -434,8 +455,8 @@ export default function CarrierDashboard() {
           )}
         </div>
 
-        {/* RIGHT: Map only (3/4) */}
-        <div className="lg:col-span-3 flex flex-col min-h-[72vh]">
+        {/* RIGHT: Map only */}
+        <div className="flex-1 flex flex-col min-h-[72vh]">
           <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             {simMode ? (
               <RoutePlanner
