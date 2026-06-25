@@ -10,10 +10,13 @@ const setupSocket = require('./sockets');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: config.clientUrl, methods: ['GET', 'POST'] },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-app.use(cors({ origin: config.clientUrl }));
+app.use(cors({
+  origin: (origin, cb) => { cb(null, true); },
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
