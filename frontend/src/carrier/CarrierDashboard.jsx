@@ -15,14 +15,12 @@ export default function CarrierDashboard() {
   const [carriers, setCarriers] = useState([]);
   const [simOverride, setSimOverride] = useState('');
   const [isStarting, setIsStarting] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const { position } = useGeolocation();
   const socket = useSocket();
   const { profile } = useAuth();
   const {
     simMode, waypoints, previousSegments, routeGeometry, saveRoute, loadSimulationSegments,
-    startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
+    startSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
   const MOCK_CARRIERS = [
@@ -165,26 +163,13 @@ export default function CarrierDashboard() {
     }
   };
 
-  const handleSaveRoute = async () => {
-    if (!selected) return;
-    setIsSaving(true);
-    try {
-      const cId = simOverride || profile?._id;
-      const cName = allCarriers.find((c) => c._id === cId)?.name || profile?.name;
-      await saveRoute(selected.trackingNumber, cId, cName);
-      alert('Route saved!');
-    } catch (err) {
-      alert('Unable to save route. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleStartSim = async () => {
-    if (!selected) return;
+    if (!selected || waypoints.length < 2) return;
     setIsStarting(true);
     const cId = simOverride || profile?._id;
+    const cName = allCarriers.find((c) => c._id === cId)?.name || profile?.name;
     try {
+      await saveRoute(selected.trackingNumber, cId, cName);
       const started = await startSimulation(selected._id, selected.trackingNumber, socket, cId);
       if (!started) {
         alert('Unable to start simulation. Check your route and try again.');
@@ -194,18 +179,6 @@ export default function CarrierDashboard() {
     } finally {
       setIsStarting(false);
     }
-  };
-
-  const handleStopSim = async () => {
-    if (!selected) return;
-    setIsStopping(true);
-    const cId = simOverride || profile?._id;
-    const stopped = await stopSimulation(selected.trackingNumber, cId);
-    if (!stopped) {
-      alert('Unable to stop simulation. Please try again.');
-    }
-    await fetchParcels();
-    setIsStopping(false);
   };
 
   const isCurrentCarrier = (parcel) => {
@@ -404,20 +377,11 @@ export default function CarrierDashboard() {
                 )}
                 {simMode && (
                   <>
-                    <button onClick={handleSaveRoute}
-                      disabled={waypoints.length < 2 || simulating || isSaving}
-                      className="bg-blue-600 text-white px-2 py-1 text-[11px] rounded hover:bg-blue-700 disabled:opacity-50">
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </button>
+                    <div className="text-[10px] text-slate-500 w-full mb-1">Start will auto-save the route and stop automatically at the final point.</div>
                     <button onClick={handleStartSim}
                       disabled={waypoints.length < 2 || simulating || isStarting}
                       className="bg-green-600 text-white px-2 py-1 text-[11px] rounded hover:bg-green-700 disabled:opacity-50">
                       {isStarting ? 'Starting...' : simulating ? 'Running...' : 'Start'}
-                    </button>
-                    <button onClick={handleStopSim}
-                      disabled={!simulating || isStopping}
-                      className="bg-red-600 text-white px-2 py-1 text-[11px] rounded hover:bg-red-700 disabled:opacity-50">
-                      {isStopping ? 'Stopping...' : 'Stop'}
                     </button>
                     <button onClick={clearWaypoints}
                       disabled={simulating}
