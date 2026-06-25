@@ -119,7 +119,6 @@ export function SimulationProvider({ children }) {
 
     setSimulating(false);
     setSimParcelId(null);
-    setCurrentSimIndex(null);
 
     if (path && path.length >= 2) {
       setRouteGeometry(path);
@@ -278,7 +277,6 @@ export function SimulationProvider({ children }) {
     }
     setSimulating(false);
     setSimParcelId(null);
-    setCurrentSimIndex(null);
     if (!trackingNumber) {
       if (typeof onComplete === 'function') onComplete();
       return false;
