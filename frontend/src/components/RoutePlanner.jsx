@@ -50,7 +50,7 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full">
+    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full min-h-0">
       <div className="p-3 bg-slate-50 border-b border-slate-200 text-sm text-slate-500 flex items-center justify-between flex-shrink-0">
         <span>{simulating ? 'Simulation running — parcel moving along route' : 'Click on the map to place your waypoints'}</span>
         {prevSegs.length > 0 && (
@@ -58,7 +58,7 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
         )}
       </div>
       <div className="flex-1 min-h-0">
-        <MapContainer center={center} zoom={wp.length > 0 ? 5 : 2} className="h-full w-full">
+        <MapContainer center={center} zoom={wp.length > 0 ? 5 : 2} className="h-full w-full min-h-0">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <ClickHandler />
 
