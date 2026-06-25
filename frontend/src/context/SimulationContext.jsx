@@ -80,6 +80,8 @@ export function SimulationProvider({ children }) {
         setWaypoints(mySegment.waypoints);
         if (mySegment.routeGeometry && mySegment.routeGeometry.length > 0) {
           setRouteGeometry(mySegment.routeGeometry);
+        } else {
+          setRouteGeometry([]);
         }
       } else {
         const lastCompleted = allCompleted[allCompleted.length - 1];
@@ -90,12 +92,50 @@ export function SimulationProvider({ children }) {
         } else {
           setWaypoints([]);
         }
+        setRouteGeometry([]);
       }
     } catch {
       setPreviousSegments([]);
       setWaypoints([]);
     }
   }, []);
+
+  const completeSimulation = useCallback(async (trackingNumber, carrierId, socket, parcelId, finalPoint, onComplete) => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    setSimulating(false);
+    setSimParcelId(null);
+
+    if (socket && parcelId && finalPoint) {
+      socket.emit('location:update', {
+        parcelId,
+        lat: finalPoint.lat,
+        lng: finalPoint.lng,
+        carrierId: carrierId || undefined,
+        carrierName: 'Simulation',
+      });
+    }
+
+    try {
+      const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
+      await api.post('/simulation/stop', { trackingNumber }, { headers });
+      if (trackingNumber) {
+        await loadSimulationSegments(trackingNumber, carrierId);
+      }
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
+      return true;
+    } catch {
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
+      return false;
+    }
+  }, [loadSimulationSegments]);
 
   const addWaypoint = (lat, lng, transportMode = 'truck') => {
     const offset = previousSegments.reduce((sum, s) => sum + s.waypoints.length, 0);
@@ -162,15 +202,12 @@ export function SimulationProvider({ children }) {
     timerRef.current = setInterval(() => {
       pos += speedRef.current;
       if (pos >= totalSteps - 1) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-        setSimulating(false);
-        setCurrentSimIndex(path.length - 1);
-        const last = path[path.length - 1];
-        if (socket && parcelId) {
-          socket.emit('location:update', { parcelId, lat: last.lat, lng: last.lng, carrierId: carrierId || undefined, carrierName: 'Simulation' });
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
         }
-        api.post('/simulation/stop', { trackingNumber }, { headers: carrierId ? { 'x-sim-carrier-id': carrierId } : {} }).catch(() => {});
+        setCurrentSimIndex(path.length - 1);
+        completeSimulation(trackingNumber, carrierId, socket, parcelId, path[path.length - 1]);
         return;
       }
 
@@ -210,17 +247,30 @@ export function SimulationProvider({ children }) {
     }
   }, [waypoints, routeGeometry]);
 
-  const stopSimulation = async (trackingNumber, carrierId) => {
+  const stopSimulation = async (trackingNumber, carrierId, onComplete) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     setSimulating(false);
     setSimParcelId(null);
+    if (!trackingNumber) {
+      if (typeof onComplete === 'function') onComplete();
+      return false;
+    }
     try {
       const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
       await api.post('/simulation/stop', { trackingNumber }, { headers });
-    } catch {}
+      await loadSimulationSegments(trackingNumber, carrierId);
+      if (typeof onComplete === 'function') onComplete();
+      return true;
+    } catch {
+      try {
+        await loadSimulationSegments(trackingNumber, carrierId);
+      } catch {}
+      if (typeof onComplete === 'function') onComplete();
+      return true;
+    }
   };
 
   return (

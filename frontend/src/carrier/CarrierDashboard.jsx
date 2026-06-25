@@ -200,14 +200,12 @@ export default function CarrierDashboard() {
     if (!selected) return;
     setIsStopping(true);
     const cId = simOverride || profile?._id;
-    try {
-      await stopSimulation(selected.trackingNumber, cId);
-      await fetchParcels();
-    } catch {
+    const stopped = await stopSimulation(selected.trackingNumber, cId);
+    if (!stopped) {
       alert('Unable to stop simulation. Please try again.');
-    } finally {
-      setIsStopping(false);
     }
+    await fetchParcels();
+    setIsStopping(false);
   };
 
   const isCurrentCarrier = (parcel) => {
