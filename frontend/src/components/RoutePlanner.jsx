@@ -62,9 +62,12 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <ClickHandler />
 
-          {/* Previous carriers' completed segments */}
+          {/* Previous carriers' completed segments (road-following when available) */}
           {prevSegs.map((seg, si) => {
-            const coords = seg.waypoints.map((w) => [w.lat, w.lng]);
+            const hasRoadGeo = seg.routeGeometry && seg.routeGeometry.length >= 2;
+            const coords = hasRoadGeo
+              ? seg.routeGeometry.map((p) => [p.lat, p.lng])
+              : seg.waypoints.map((w) => [w.lat, w.lng]);
             if (coords.length < 2) return null;
             return (
               <Polyline

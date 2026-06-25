@@ -44,13 +44,16 @@ export function SimulationProvider({ children }) {
 
   useEffect(() => {
     if (osrmTimerRef.current) clearTimeout(osrmTimerRef.current);
-    if (waypoints.length < 2) { setRouteGeometry([]); return; }
+    if (waypoints.length < 2) {
+      if (previousSegments.length === 0) setRouteGeometry([]);
+      return;
+    }
     osrmTimerRef.current = setTimeout(async () => {
       const geo = await fetchRouteGeometry(waypoints);
       if (geo.length > 0) setRouteGeometry(geo);
     }, 500);
     return () => { if (osrmTimerRef.current) clearTimeout(osrmTimerRef.current); };
-  }, [waypoints]);
+  }, [waypoints, previousSegments.length]);
 
   const toggleMode = () => setSimMode((m) => !m);
 
