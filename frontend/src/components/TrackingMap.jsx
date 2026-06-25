@@ -9,7 +9,7 @@ function AutoFollow({ position }) {
   return null;
 }
 
-export default function TrackingMap({ position, routeSegments = [], height = 'h-[55vh]' }) {
+export default function TrackingMap({ position, routeSegments = [], height = 'h-full' }) {
   if (!position) return (
     <div className={`${height} bg-gray-200 rounded-lg flex items-center justify-center text-gray-400`}>
       No location data

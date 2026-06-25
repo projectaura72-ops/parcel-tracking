@@ -404,7 +404,7 @@ export default function CarrierDashboard() {
         </div>
 
         {/* RIGHT: Map only (3/4) */}
-        <div className="lg:col-span-3 h-[calc(100vh-10rem)]">
+        <div className="lg:col-span-3 min-h-0">
           {selected ? (
             simMode ? (
               <RoutePlanner

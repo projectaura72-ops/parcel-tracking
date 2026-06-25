@@ -13,8 +13,8 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <nav className="bg-white shadow-sm border-b flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="font-bold text-lg text-blue-600">GoodsTracker</Link>
           <div className="flex items-center gap-4">
@@ -39,7 +39,7 @@ export default function Layout() {
           </div>
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto p-2 sm:p-4">
+      <main className="flex-1 min-h-0 max-w-7xl mx-auto p-2 sm:p-4 w-full">
         <Outlet />
       </main>
     </div>
