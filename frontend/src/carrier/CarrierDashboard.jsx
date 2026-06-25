@@ -20,7 +20,7 @@ export default function CarrierDashboard() {
   const { profile } = useAuth();
   const {
     simMode, waypoints, previousSegments, routeGeometry, saveRoute, loadSimulationSegments,
-    startSimulation, simulating, currentSimIndex, simParcelId, simCompletedFor, speed, setSpeed, clearWaypoints
+    startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, simCompletedFor, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
   const MOCK_CARRIERS = [
@@ -194,6 +194,15 @@ export default function CarrierDashboard() {
     } finally {
       setIsStarting(false);
     }
+  };
+
+  const handleStopSim = async () => {
+    if (!selected) return;
+    const cId = simOverride || profile?._id;
+    await stopSimulation(selected.trackingNumber, cId, () => {
+      fetchParcels();
+      loadSimulationSegments(selected.trackingNumber, cId);
+    });
   };
 
   const isCurrentCarrier = (parcel) => {
@@ -398,6 +407,11 @@ export default function CarrierDashboard() {
                       className="bg-green-600 text-white px-2 py-1 text-[11px] rounded hover:bg-green-700 disabled:opacity-50">
                       {isStarting ? 'Starting...' : simulating ? 'Running...' : 'Start'}
                     </button>
+                    <button onClick={handleStopSim}
+                      disabled={!simulating}
+                      className="bg-red-600 text-white px-2 py-1 text-[11px] rounded hover:bg-red-700 disabled:opacity-50">
+                      Stop
+                    </button>
                     <button onClick={clearWaypoints}
                       disabled={simulating}
                       className="bg-gray-500 text-white px-2 py-1 text-[11px] rounded hover:bg-gray-600 disabled:opacity-50">
@@ -440,11 +454,10 @@ export default function CarrierDashboard() {
         </div>
 
         {/* RIGHT: Map only */}
-        <div className="flex-1 flex flex-col min-h-[72vh]">
-          <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             {simMode ? (
               <RoutePlanner
-                className="h-full"
                 previousSegments={previousSegments}
                 currentLocation={displayedParcel?.currentLocation}
                 simulating={simulating}

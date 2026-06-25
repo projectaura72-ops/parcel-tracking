@@ -1,5 +1,6 @@
 const Parcel = require('../models/Parcel');
 const TrackingHistory = require('../models/TrackingHistory');
+const { getIO } = require('../sockets');
 
 const CARRIER_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4'];
 
@@ -89,6 +90,11 @@ exports.startSimulation = async (req, res, next) => {
       message: 'Simulation started',
     });
 
+    const io = getIO();
+    if (io) {
+      io.emit('parcel:sim:start', { parcelId: parcel._id, trackingNumber });
+    }
+
     res.json({ parcel, segment: segment.toObject() });
   } catch (err) {
     next(err);
@@ -122,6 +128,11 @@ exports.stopSimulation = async (req, res, next) => {
       location: parcel.currentLocation,
       message: 'Simulation segment completed',
     });
+
+    const io = getIO();
+    if (io) {
+      io.emit('parcel:sim:complete', { parcelId: parcel._id, trackingNumber });
+    }
 
     res.json(parcel);
   } catch (err) {

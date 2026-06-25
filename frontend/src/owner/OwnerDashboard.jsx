@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import TrackingMap from '../components/TrackingMap';
@@ -9,13 +9,16 @@ export default function OwnerDashboard() {
   const [showCreate, setShowCreate] = useState(false);
   const socket = useSocket();
 
-  useEffect(() => {
-    const fetchParcels = async () => {
+  const fetchParcels = useCallback(async () => {
+    try {
       const { data } = await api.get('/parcels');
       setParcels(data);
-    };
-    fetchParcels();
+    } catch {}
   }, []);
+
+  useEffect(() => {
+    fetchParcels();
+  }, [fetchParcels]);
 
   useEffect(() => {
     if (!socket) return;
@@ -38,11 +41,19 @@ export default function OwnerDashboard() {
       if (!event.startsWith('parcel:location:')) return;
       handler(data);
     });
+    socket.on('parcel:sim:start', () => {
+      fetchParcels();
+    });
+    socket.on('parcel:sim:complete', () => {
+      fetchParcels();
+    });
     return () => {
       socket.off('location:update', handler);
       socket.offAny();
+      socket.off('parcel:sim:start');
+      socket.off('parcel:sim:complete');
     };
-  }, [socket]);
+  }, [socket, fetchParcels]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -50,12 +61,28 @@ export default function OwnerDashboard() {
     const body = Object.fromEntries(form);
     const { data } = await api.post('/parcels', body);
     setParcels((prev) => [data, ...prev]);
+    setSelected(data);
     setShowCreate(false);
   };
 
+  const mapSegments = selected
+    ? [
+        ...(selected.routeSegments || []),
+        ...(selected.simulationSegments || []).map((s) => ({
+          carrierName: s.carrierName,
+          color: s.color,
+          status: s.status === 'planned' ? 'active' : s.status,
+          points: (s.routeGeometry && s.routeGeometry.length >= 2
+            ? s.routeGeometry
+            : (s.waypoints || [])
+          ).map((p) => ({ lat: p.lat, lng: p.lng })),
+        })),
+      ]
+    : [];
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 flex flex-col min-h-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-shrink-0">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900">My Parcels</h1>
           <p className="mt-1 text-sm text-slate-500">Create new shipments and review active tracking details.</p>
@@ -66,7 +93,7 @@ export default function OwnerDashboard() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleCreate} className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex-shrink-0">
           <div className="grid gap-4 sm:grid-cols-2">
             <input name="name" placeholder="Parcel name" required className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
             <input name="description" placeholder="Description" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
@@ -81,8 +108,8 @@ export default function OwnerDashboard() {
         </form>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="space-y-3">
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0">
+        <div className="space-y-3 overflow-y-auto min-h-0">
           {parcels.map((p) => (
             <div
               key={p._id}
@@ -111,17 +138,16 @@ export default function OwnerDashboard() {
           {parcels.length === 0 && <p className="text-center text-slate-500 py-8">No parcels yet</p>}
         </div>
 
-        <div>
+        <div className="min-h-0 flex flex-col">
           {selected ? (
             <>
-              <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex-1 min-h-0">
                 <TrackingMap
                   position={selected.currentLocation}
-                  routeSegments={selected.routeSegments || []}
-                  parcelId={selected.trackingNumber || selected._id}
+                  routeSegments={mapSegments}
                 />
               </div>
-              <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm grid gap-4 sm:grid-cols-2">
+              <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm grid gap-4 sm:grid-cols-2 flex-shrink-0">
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">{selected.name}</h2>
                   <p className="mt-2 text-sm font-mono tracking-[0.18em] text-sky-600">{selected.trackingNumber}</p>
@@ -138,7 +164,7 @@ export default function OwnerDashboard() {
               </div>
             </>
           ) : (
-            <div className="rounded-3xl border border-slate-200 bg-white shadow-sm h-[55vh] flex items-center justify-center text-slate-400">
+            <div className="rounded-3xl border border-slate-200 bg-white shadow-sm flex-1 min-h-0 flex items-center justify-center text-slate-400">
               Select a parcel to view tracking
             </div>
           )}

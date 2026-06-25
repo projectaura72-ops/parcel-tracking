@@ -4,6 +4,7 @@ const Parcel = require('../models/Parcel');
 const userSockets = new Map();
 const CARRIER_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4'];
 const colorIndex = {};
+let ioInstance = null;
 
 function getCarrierColor(carrierId) {
   if (!colorIndex[carrierId]) {
@@ -34,6 +35,7 @@ async function addRoutePoint(parcelId, carrierId, carrierName, lat, lng) {
 }
 
 function setupSocket(io) {
+  ioInstance = io;
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
@@ -127,3 +129,4 @@ function setupSocket(io) {
 }
 
 module.exports = setupSocket;
+module.exports.getIO = () => ioInstance;
