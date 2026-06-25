@@ -9,13 +9,13 @@ function AutoFollow({ position }) {
   return null;
 }
 
-export default function TrackingMap({ position, routeSegments = [], height = 'h-full' }) {
+export default function TrackingMap({ position, routeSegments = [] }) {
   const pos = position ? [position.lat, position.lng] : [20, 0];
   const zoom = position ? 13 : 2;
 
   return (
-    <div className={`${height} min-h-0 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden relative`}>
-      <MapContainer center={pos} zoom={zoom} className="h-full w-full rounded-3xl min-h-0">
+    <div className="h-full min-h-[420px] rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden relative">
+      <MapContainer center={pos} zoom={zoom} style={{ height: '100%', minHeight: 420 }} className="w-full">
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <AutoFollow position={position} />
         <Marker position={pos} icon={icon}>

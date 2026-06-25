@@ -54,9 +54,9 @@ export default function CarrierDashboard() {
     }
     setParcels(data);
     setSelected((prev) => {
-      if (!prev) return null;
+      if (!prev) return data[0] || null;
       const updated = data.find((p) => p._id === prev._id);
-      return updated || null;
+      return updated || data[0] || null;
     });
   }, [simMode, simOverride]);
 
@@ -246,7 +246,7 @@ export default function CarrierDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-0 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-0">
         {/* LEFT: All controls */}
         <div className="lg:col-span-1 flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm min-h-0">
           <div className="space-y-3">
@@ -435,10 +435,11 @@ export default function CarrierDashboard() {
         </div>
 
         {/* RIGHT: Map only (3/4) */}
-        <div className="lg:col-span-3 min-h-0 h-full flex">
-          <div className="h-full min-h-0 flex-1 flex flex-col">
+        <div className="lg:col-span-3 flex flex-col min-h-[72vh]">
+          <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             {simMode ? (
               <RoutePlanner
+                className="h-full"
                 previousSegments={previousSegments}
                 currentLocation={displayedParcel?.currentLocation}
                 simulating={simulating}
@@ -450,7 +451,6 @@ export default function CarrierDashboard() {
               <TrackingMap
                 position={displayedParcel?.currentLocation}
                 routeSegments={displayedParcel?.routeSegments || []}
-                height="h-full"
               />
             )}
           </div>
