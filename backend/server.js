@@ -14,7 +14,7 @@ const io = new Server(server, {
 });
 
 app.use(cors({ origin: config.clientUrl }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/parcels', require('./routes/parcels'));
