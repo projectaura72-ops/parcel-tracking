@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import api from '../services/api';
 import { fetchRouteGeometry } from '../services/routing';
+import eventBus from '../mock/eventBus';
 
 const SimulationContext = createContext(null);
 
@@ -11,6 +11,7 @@ const SEGMENT_SPEEDS = {
 };
 
 const LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+const CARRIER_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4'];
 
 function interpolate(from, to, fraction) {
   return {
@@ -58,62 +59,12 @@ export function SimulationProvider({ children }) {
 
   const toggleMode = () => setSimMode((m) => !m);
 
-  const loadSimulationSegments = useCallback(async (trackingNumber, carrierId) => {
-    if (!trackingNumber) {
-      setPreviousSegments([]);
-      setWaypoints([]);
-      return;
-    }
-    try {
-      const { data } = await api.get(`/simulation/route/${trackingNumber}`);
-      const allCompleted = data.filter((s) => s.status === 'completed');
-
-      const mySegment = data.find(
-        (s) => s.carrierId && carrierId && s.carrierId.toString() === carrierId.toString() && (s.status === 'planned' || s.status === 'active')
-      );
-
-      const others = data.filter(
-        (s) => !(s.carrierId && carrierId && s.carrierId.toString() === carrierId.toString() && (s.status === 'planned' || s.status === 'active'))
-      );
-      setPreviousSegments(others);
-
-      if (mySegment) {
-        setWaypoints(mySegment.waypoints);
-        if (mySegment.routeGeometry && mySegment.routeGeometry.length > 0) {
-          setRouteGeometry(mySegment.routeGeometry);
-        } else {
-          setRouteGeometry([]);
-        }
-      } else {
-        const lastCompleted = allCompleted[allCompleted.length - 1];
-        if (lastCompleted && lastCompleted.waypoints.length > 0) {
-          const lastWp = lastCompleted.waypoints[lastCompleted.waypoints.length - 1];
-          setWaypoints([{ ...lastWp }]);
-          if (lastCompleted.routeGeometry && lastCompleted.routeGeometry.length > 0) {
-            setRouteGeometry(lastCompleted.routeGeometry);
-          } else {
-            setRouteGeometry([]);
-          }
-        } else {
-          setWaypoints([]);
-          setRouteGeometry([]);
-        }
-      }
-    } catch {
-      setPreviousSegments([]);
-      setWaypoints([]);
-    }
+  const loadSimulationSegments = useCallback((trackingNumber, carrierId) => {
+    setPreviousSegments([]);
+    setWaypoints([]);
   }, []);
 
-  const completeSimulation = useCallback(async (
-    trackingNumber,
-    carrierId,
-    socket,
-    parcelId,
-    finalPoint,
-    path,
-    onComplete
-  ) => {
+  const completeSimulation = useCallback((trackingNumber, carrierId, parcelId, finalPoint, path) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -127,8 +78,8 @@ export function SimulationProvider({ children }) {
       setRouteGeometry(path);
     }
 
-    if (socket && parcelId && finalPoint) {
-      socket.emit('location:update', {
+    if (parcelId && finalPoint) {
+      eventBus.emit('location:update', {
         parcelId,
         lat: finalPoint.lat,
         lng: finalPoint.lng,
@@ -137,28 +88,21 @@ export function SimulationProvider({ children }) {
       });
     }
 
-    try {
-      const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
-      await api.post('/simulation/stop', { trackingNumber }, { headers });
-      if (trackingNumber) {
-        await loadSimulationSegments(trackingNumber, carrierId);
-      }
-      if (typeof onComplete === 'function') {
-        onComplete();
-      }
-      return true;
-    } catch {
-      if (trackingNumber) {
-        try {
-          await loadSimulationSegments(trackingNumber, carrierId);
-        } catch {}
-      }
-      if (typeof onComplete === 'function') {
-        onComplete();
-      }
-      return false;
+    if (trackingNumber && carrierId) {
+      setPreviousSegments((prev) => {
+        const alreadyThere = prev.find((s) => s.carrierId === carrierId);
+        if (alreadyThere) return prev;
+        return [...prev, {
+          carrierId,
+          carrierName: 'Carrier',
+          color: CARRIER_COLORS[prev.length % CARRIER_COLORS.length],
+          waypoints: path,
+          routeGeometry: path || routeGeometry,
+          status: 'completed',
+        }];
+      });
     }
-  }, [loadSimulationSegments]);
+  }, []);
 
   const addWaypoint = (lat, lng, transportMode = 'truck') => {
     const offset = previousSegments.reduce((sum, s) => sum + s.waypoints.length - 1, 0);
@@ -187,18 +131,7 @@ export function SimulationProvider({ children }) {
     }
   };
 
-  const saveRoute = async (trackingNumber, carrierId, carrierName) => {
-    const headers = {};
-    if (carrierId) headers['x-sim-carrier-id'] = carrierId;
-    if (carrierName) headers['x-sim-carrier-name'] = carrierName;
-    const { data } = await api.post('/simulation/route', {
-      trackingNumber, waypoints,
-      routeGeometry: routeGeometry.length > 0 ? routeGeometry : undefined,
-    }, { headers });
-    return data;
-  };
-
-  const startSimulation = useCallback(async (parcelId, trackingNumber, socket, carrierId) => {
+  const startSimulation = useCallback((parcelId, trackingNumber, carrierId) => {
     if (!trackingNumber || !parcelId || waypoints.length < 2) return false;
 
     setSimulating(true);
@@ -230,7 +163,7 @@ export function SimulationProvider({ children }) {
           timerRef.current = null;
         }
         setCurrentSimIndex(path.length - 1);
-        completeSimulation(trackingNumber, carrierId, socket, parcelId, path[path.length - 1], path);
+        completeSimulation(trackingNumber, carrierId, parcelId, path[path.length - 1], path);
         return;
       }
 
@@ -244,8 +177,8 @@ export function SimulationProvider({ children }) {
 
       setCurrentSimIndex(pathIdx);
 
-      if (socket && parcelId) {
-        socket.emit('location:update', {
+      if (parcelId) {
+        eventBus.emit('location:update', {
           parcelId,
           lat: current.lat,
           lng: current.lng,
@@ -255,22 +188,10 @@ export function SimulationProvider({ children }) {
       }
     }, 1000);
 
-    try {
-      const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
-      await api.post('/simulation/start', { trackingNumber }, { headers });
-      return true;
-    } catch {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      setSimulating(false);
-      setSimParcelId(null);
-      return false;
-    }
+    return true;
   }, [completeSimulation, waypoints]);
 
-  const stopSimulation = async (trackingNumber, carrierId, onComplete) => {
+  const stopSimulation = (trackingNumber, carrierId) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -278,30 +199,13 @@ export function SimulationProvider({ children }) {
     setSimulating(false);
     setSimParcelId(null);
     setSimCompletedFor(null);
-    if (!trackingNumber) {
-      if (typeof onComplete === 'function') onComplete();
-      return false;
-    }
-    try {
-      const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
-      await api.post('/simulation/stop', { trackingNumber }, { headers });
-      await loadSimulationSegments(trackingNumber, carrierId);
-      if (typeof onComplete === 'function') onComplete();
-      return true;
-    } catch {
-      try {
-        await loadSimulationSegments(trackingNumber, carrierId);
-      } catch {}
-      if (typeof onComplete === 'function') onComplete();
-      return true;
-    }
   };
 
   return (
     <SimulationContext.Provider value={{
       simMode, toggleMode,
       previousSegments, routeGeometry,
-      waypoints, setWaypoints, addWaypoint, updateWaypoint, removeWaypoint, clearWaypoints, saveRoute,
+      waypoints, setWaypoints, addWaypoint, updateWaypoint, removeWaypoint, clearWaypoints,
       simulating, currentSimIndex, simParcelId, simCompletedFor, speed, setSpeed,
       loadSimulationSegments, startSimulation, stopSimulation,
     }}>
