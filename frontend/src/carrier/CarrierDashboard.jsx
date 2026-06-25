@@ -18,7 +18,7 @@ export default function CarrierDashboard() {
   const socket = useSocket();
   const { profile } = useAuth();
   const {
-    simMode, waypoints, previousSegments, saveRoute, loadSimulationSegments,
+    simMode, waypoints, previousSegments, routeGeometry, saveRoute, loadSimulationSegments,
     startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
@@ -29,8 +29,17 @@ export default function CarrierDashboard() {
   }, []);
 
   const fetchParcels = useCallback(async () => {
-    const params = simMode && simOverride ? { params: { simCarrierId: simOverride } } : {};
-    const { data } = await api.get('/carriers/parcels', params);
+    let data;
+    if (simMode) {
+      const res = await api.get('/parcels/all');
+      data = res.data;
+    } else if (simOverride) {
+      const res = await api.get('/carriers/parcels', { params: { simCarrierId: simOverride } });
+      data = res.data;
+    } else {
+      const res = await api.get('/carriers/parcels');
+      data = res.data;
+    }
     setParcels(data);
     setSelected((prev) => {
       if (!prev) return null;
@@ -175,10 +184,9 @@ export default function CarrierDashboard() {
     : '';
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Carrier Dashboard</h1>
-
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+        <h1 className="text-xl font-bold">Carrier Dashboard</h1>
         {simMode && carriers.length > 0 && (
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500">Simulate as:</label>
@@ -197,37 +205,34 @@ export default function CarrierDashboard() {
       </div>
 
       {simHeaderText && (
-        <p className="text-xs text-purple-600 mb-2 font-medium">{simHeaderText}</p>
+        <p className="text-xs text-purple-600 mb-1 flex-shrink-0 font-medium">{simHeaderText}</p>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left panel: parcel list */}
-        <div className="lg:col-span-1 space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-1 min-h-0">
+        {/* LEFT: All controls */}
+        <div className="lg:col-span-1 space-y-2 overflow-y-auto">
           <button
             onClick={() => setShowClaim(!showClaim)}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+            className="w-full bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm"
           >
             {showClaim ? 'Cancel' : '+ Claim Parcel'}
           </button>
 
           {showClaim && (
-            <div className="bg-white p-3 rounded-lg shadow">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Enter tracking code
-              </label>
+            <div className="bg-white p-2 rounded-lg shadow">
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="e.g. GT1A2B3C4D"
+                  placeholder="Tracking code"
                   value={trackingCode}
                   onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
-                  className="border rounded px-2 py-1 text-sm w-full font-mono uppercase"
+                  className="border rounded px-2 py-1 text-xs w-full font-mono uppercase"
                   onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
                 />
                 <button
                   onClick={handleClaim}
                   disabled={!trackingCode.trim()}
-                  className="bg-green-600 text-white px-3 py-1 text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                  className="bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 disabled:opacity-50"
                 >
                   Go
                 </button>
@@ -235,216 +240,175 @@ export default function CarrierDashboard() {
             </div>
           )}
 
-          {parcelList.map((p) => (
-            <div
-              key={p._id}
-              onClick={() => { setSelected(p); setShowClaim(false); }}
-              className={`bg-white p-3 rounded-lg shadow cursor-pointer border-l-4 transition-colors ${
-                selected?._id === p._id ? 'border-blue-500 ring-2 ring-blue-200' :
-                p.status === 'delivered' ? 'border-green-500' :
-                p.status === 'in_transit' ? 'border-blue-500' : 'border-gray-300'
-              }`}
-            >
-              <p className="font-semibold text-sm">{p.name}</p>
-              <p className="text-xs text-gray-400 font-mono">{p.trackingNumber}</p>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs capitalize text-gray-500">{p.status.replace('_', ' ')}</span>
-                {isCurrentCarrier(p) && (
-                  <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Yours</span>
+          <div className="space-y-1 max-h-[30vh] overflow-y-auto">
+            {parcelList.map((p) => (
+              <div
+                key={p._id}
+                onClick={() => { setSelected(p); setShowClaim(false); }}
+                className={`bg-white p-2 rounded shadow cursor-pointer border-l-4 transition-colors text-xs ${
+                  selected?._id === p._id ? 'border-blue-500 ring-1 ring-blue-200' :
+                  p.status === 'delivered' ? 'border-green-500' :
+                  p.status === 'in_transit' ? 'border-blue-500' : 'border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold truncate">{p.name}</p>
+                  {isCurrentCarrier(p) && (
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded flex-shrink-0">Yours</span>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-400 font-mono">{p.trackingNumber}</p>
+                <span className="text-[10px] capitalize text-gray-500">{p.status.replace('_', ' ')}</span>
+              </div>
+            ))}
+            {parcelList.length === 0 && (
+              <p className="text-gray-400 text-center py-4 text-xs">No parcels</p>
+            )}
+          </div>
+
+          {selected && (
+            <div className="bg-white rounded-lg shadow p-2 space-y-2">
+              <div>
+                <p className="font-bold text-sm">{selected.name}</p>
+                <p className="text-[10px] font-mono text-blue-600">{selected.trackingNumber}</p>
+              </div>
+
+              <div className="text-[11px] space-y-0.5">
+                <p><span className="text-gray-500">From:</span> {selected.origin}</p>
+                <p><span className="text-gray-500">To:</span> {selected.destination}</p>
+                <p><span className="text-gray-500">Status:</span> <span className="capitalize">{selected.status.replace('_', ' ')}</span></p>
+              </div>
+
+              {/* Route progress */}
+              {((activeSegments.length > 0 || completedSegments.length > 0) || previousSegments.length > 0) && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-700 mb-1">Progress</p>
+                  <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                    {selected.routeSegments?.map((seg, i) => (
+                      <div key={`rs-${i}`} className="flex items-center gap-1 text-[10px]">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
+                        <span className={seg.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-700'}>
+                          {seg.carrierName}
+                        </span>
+                        <span className={`ml-auto text-[10px] ${seg.status === 'completed' ? 'text-green-600' : 'text-blue-600'}`}>
+                          {seg.status === 'completed' ? 'Done' : 'Active'}
+                        </span>
+                      </div>
+                    ))}
+                    {previousSegments.map((seg, i) => (
+                      <div key={`sim-${i}`} className="flex items-center gap-1 text-[10px]">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
+                        <span className="text-gray-400 line-through">{seg.carrierName}</span>
+                        {seg.waypoints.length > 0 && (
+                          <span className="text-gray-400">{seg.waypoints[0].label}→{seg.waypoints[seg.waypoints.length - 1].label}</span>
+                        )}
+                        <span className="ml-auto text-green-600">Done</span>
+                      </div>
+                    ))}
+                    {simMode && waypoints.length > 0 && (
+                      <div className="flex items-center gap-1 text-[10px]">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-500" />
+                        <span className="text-gray-700 font-medium">Your route</span>
+                        <span className="text-gray-400">{waypoints[0].label}→{waypoints[waypoints.length - 1].label}</span>
+                        {simulating && <span className="ml-auto text-blue-600">Moving...</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-gray-100">
+                {!simMode && hasActiveSegment(selected) && (
+                  <button onClick={() => handleCompleteSegment(selected._id)}
+                    className="bg-yellow-600 text-white px-2 py-1 text-[11px] rounded hover:bg-yellow-700">
+                    Complete Segment
+                  </button>
+                )}
+                {!simMode && selected.status === 'in_transit' && !isCurrentCarrier(selected) && (
+                  <button onClick={() => { setTrackingCode(selected.trackingNumber); setShowClaim(true); }}
+                    className="bg-blue-600 text-white px-2 py-1 text-[11px] rounded hover:bg-blue-700">
+                    Claim (Handoff)
+                  </button>
+                )}
+                {simMode && (
+                  <>
+                    <button onClick={handleSaveRoute}
+                      disabled={waypoints.length < 2 || simulating}
+                      className="bg-blue-600 text-white px-2 py-1 text-[11px] rounded hover:bg-blue-700 disabled:opacity-50">
+                      Save
+                    </button>
+                    <button onClick={handleStartSim}
+                      disabled={waypoints.length < 2 || simulating}
+                      className="bg-green-600 text-white px-2 py-1 text-[11px] rounded hover:bg-green-700 disabled:opacity-50">
+                      {simulating ? 'Run...' : 'Start'}
+                    </button>
+                    <button onClick={handleStopSim}
+                      disabled={!simulating}
+                      className="bg-red-600 text-white px-2 py-1 text-[11px] rounded hover:bg-red-700 disabled:opacity-50">
+                      Stop
+                    </button>
+                    <button onClick={clearWaypoints}
+                      disabled={simulating}
+                      className="bg-gray-500 text-white px-2 py-1 text-[11px] rounded hover:bg-gray-600 disabled:opacity-50">
+                      Clear
+                    </button>
+                    {!simulating && waypoints.length >= 2 && (
+                      <button onClick={() => handleCompleteSegment(selected._id)}
+                        className="bg-yellow-600 text-white px-2 py-1 text-[11px] rounded hover:bg-yellow-700">
+                        Complete
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
+
+              {/* Speed controls */}
+              {simMode && (
+                <div className="flex items-center gap-1 pt-1 border-t border-gray-100">
+                  <span className="text-[10px] text-gray-500">Speed:</span>
+                  {[1, 2, 5, 10].map((s) => (
+                    <button key={s} onClick={() => setSpeed(s)}
+                      className={`px-1.5 py-0.5 text-[10px] rounded border ${
+                        speed === s ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                      }`}>
+                      {s}x
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {simulating && (
+                <div className="bg-green-50 border border-green-200 rounded p-1.5 text-[11px] text-green-800 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  Parcel moving...
+                </div>
+              )}
             </div>
-          ))}
-          {parcelList.length === 0 && (
-            <p className="text-gray-400 text-center py-8 text-sm">No parcels yet</p>
           )}
         </div>
 
-        {/* Right panel: parcel detail */}
-        <div className="lg:col-span-2">
+        {/* RIGHT: Map only (3/4) */}
+        <div className="lg:col-span-3 h-[calc(100vh-10rem)]">
           {selected ? (
-            <>
-              {simMode ? (
-                <RoutePlanner
-                  previousSegments={previousSegments}
-                  currentLocation={selected.currentLocation}
-                  simulating={simulating}
-                  currentSimIndex={currentSimIndex}
-                  waypoints={waypoints}
-                />
-              ) : (
-                <TrackingMap
-                  position={selected.currentLocation}
-                  routeSegments={selected.routeSegments || []}
-                />
-              )}
-
-              <div className="bg-white p-4 rounded-lg shadow mt-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h2 className="font-bold text-lg">{selected.name}</h2>
-                    <p className="text-sm font-mono tracking-widest text-blue-600">{selected.trackingNumber}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-xs px-2 py-1 rounded capitalize ${
-                      selected.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                      selected.status === 'in_transit' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {selected.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                  <p className="text-gray-500">From: <span className="text-gray-800">{selected.origin}</span></p>
-                  <p className="text-gray-500">To: <span className="text-gray-800">{selected.destination}</span></p>
-                </div>
-
-                {/* Route segments overview (real + simulation) */}
-                {((activeSegments.length > 0 || completedSegments.length > 0) || previousSegments.length > 0) && (
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Route Progress</p>
-                    <div className="space-y-1.5">
-                      {/* Real route segments */}
-                      {selected.routeSegments?.map((seg, i) => (
-                        <div key={`rs-${i}`} className="flex items-center gap-2 text-xs">
-                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
-                          <span className={seg.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-700 font-medium'}>
-                            {seg.carrierName}
-                          </span>
-                          <span className={`ml-auto text-xs ${seg.status === 'completed' ? 'text-green-600' : 'text-blue-600'}`}>
-                            {seg.status === 'completed' ? 'Done' : 'Active'}
-                          </span>
-                        </div>
-                      ))}
-                      {/* Simulation segments from other carriers */}
-                      {previousSegments.map((seg, i) => (
-                        <div key={`sim-${i}`} className="flex items-center gap-2 text-xs">
-                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
-                          <span className="text-gray-400 line-through">{seg.carrierName}</span>
-                          {seg.waypoints.length > 0 && (
-                            <span className="text-gray-400">
-                              {seg.waypoints[0].label} → {seg.waypoints[seg.waypoints.length - 1].label}
-                            </span>
-                          )}
-                          <span className="ml-auto text-green-600 text-xs">Completed</span>
-                        </div>
-                      ))}
-                      {/* Current carrier's planned waypoints (simulation) */}
-                      {simMode && waypoints.length > 0 && (
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-gray-500" />
-                          <span className="text-gray-700 font-medium">Your route</span>
-                          <span className="text-gray-400">
-                            {waypoints[0].label} → {waypoints[waypoints.length - 1].label}
-                          </span>
-                          {simulating && <span className="ml-auto text-blue-600 text-xs">Moving...</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {!simMode && hasActiveSegment(selected) && (
-                    <button
-                      onClick={() => handleCompleteSegment(selected._id)}
-                      className="bg-yellow-600 text-white px-4 py-2 text-sm rounded hover:bg-yellow-700"
-                    >
-                      Complete Segment & Handoff
-                    </button>
-                  )}
-
-                  {!simMode && selected.status === 'in_transit' && isCurrentCarrier(selected) && !hasActiveSegment(selected) && (
-                    <button
-                      disabled
-                      className="bg-gray-400 text-white px-4 py-2 text-sm rounded cursor-not-allowed"
-                      title="Send a location update first to create your segment"
-                    >
-                      No Active Segment
-                    </button>
-                  )}
-
-                  {!simMode && selected.status === 'in_transit' && !isCurrentCarrier(selected) && (
-                    <button
-                      onClick={() => {
-                        setTrackingCode(selected.trackingNumber);
-                        setShowClaim(true);
-                      }}
-                      className="bg-blue-600 text-white px-4 py-2 text-sm rounded hover:bg-blue-700"
-                    >
-                      Claim This Parcel (Handoff)
-                    </button>
-                  )}
-
-                  {simMode && (
-                    <>
-                      <button
-                        onClick={handleSaveRoute}
-                        disabled={waypoints.length < 2 || simulating}
-                        className="bg-blue-600 text-white px-4 py-2 text-sm rounded hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        Save Route
-                      </button>
-                      <button
-                        onClick={handleStartSim}
-                        disabled={waypoints.length < 2 || simulating}
-                        className="bg-green-600 text-white px-4 py-2 text-sm rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {simulating ? 'Running...' : 'Start Sim'}
-                      </button>
-                      <button
-                        onClick={handleStopSim}
-                        disabled={!simulating}
-                        className="bg-red-600 text-white px-4 py-2 text-sm rounded hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Stop
-                      </button>
-                      <div className="flex items-center gap-1 border-l pl-2 ml-1">
-                        {[1, 2, 5, 10].map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => setSpeed(s)}
-                            className={`px-2 py-1 text-xs rounded border ${
-                              speed === s
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
-                            }`}
-                          >
-                            {s}x
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={clearWaypoints}
-                        disabled={simulating}
-                        className="bg-gray-500 text-white px-4 py-2 text-sm rounded hover:bg-gray-600 disabled:opacity-50"
-                      >
-                        Clear
-                      </button>
-                      {!simulating && waypoints.length >= 2 && (
-                        <button
-                          onClick={() => handleCompleteSegment(selected._id)}
-                          className="bg-yellow-600 text-white px-4 py-2 text-sm rounded hover:bg-yellow-700"
-                        >
-                          Complete Segment
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {simulating && (
-                  <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-2 text-sm text-green-800 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    Parcel moving along route...
-                  </div>
-                )}
-              </div>
-            </>
+            simMode ? (
+              <RoutePlanner
+                previousSegments={previousSegments}
+                currentLocation={selected.currentLocation}
+                simulating={simulating}
+                currentSimIndex={currentSimIndex}
+                waypoints={waypoints}
+                routeGeometry={routeGeometry}
+              />
+            ) : (
+              <TrackingMap
+                position={selected.currentLocation}
+                routeSegments={selected.routeSegments || []}
+                height="h-full"
+              />
+            )
           ) : (
-            <div className="bg-white rounded-lg shadow h-[55vh] flex items-center justify-center text-gray-400">
+            <div className="h-full bg-white rounded-lg shadow flex items-center justify-center text-gray-400">
               Select a parcel to view details
             </div>
           )}

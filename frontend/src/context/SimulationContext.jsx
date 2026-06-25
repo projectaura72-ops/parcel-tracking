@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import api from '../services/api';
+import { fetchRouteGeometry } from '../services/routing';
 
 const SimulationContext = createContext(null);
 
@@ -18,6 +19,15 @@ function interpolate(from, to, fraction) {
   };
 }
 
+function computeSteps(geometry, transportMode) {
+  const speed = SEGMENT_SPEEDS[transportMode] || SEGMENT_SPEEDS.truck;
+  const totalDist = geometry.reduce((sum, p, i) => {
+    if (i === 0) return 0;
+    return sum + Math.sqrt((p.lat - geometry[i - 1].lat) ** 2 + (p.lng - geometry[i - 1].lng) ** 2);
+  }, 0);
+  return Math.max(10, Math.floor(totalDist / speed));
+}
+
 export function SimulationProvider({ children }) {
   const [simMode, setSimMode] = useState(false);
   const [waypoints, setWaypoints] = useState([]);
@@ -26,9 +36,21 @@ export function SimulationProvider({ children }) {
   const [currentSimIndex, setCurrentSimIndex] = useState(0);
   const [simParcelId, setSimParcelId] = useState(null);
   const [speed, setSpeed] = useState(1);
+  const [routeGeometry, setRouteGeometry] = useState([]);
   const speedRef = useRef(1);
   speedRef.current = speed;
   const timerRef = useRef(null);
+  const osrmTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (osrmTimerRef.current) clearTimeout(osrmTimerRef.current);
+    if (waypoints.length < 2) { setRouteGeometry([]); return; }
+    osrmTimerRef.current = setTimeout(async () => {
+      const geo = await fetchRouteGeometry(waypoints);
+      if (geo.length > 0) setRouteGeometry(geo);
+    }, 500);
+    return () => { if (osrmTimerRef.current) clearTimeout(osrmTimerRef.current); };
+  }, [waypoints]);
 
   const toggleMode = () => setSimMode((m) => !m);
 
@@ -48,6 +70,9 @@ export function SimulationProvider({ children }) {
       );
       if (mySegment) {
         setWaypoints(mySegment.waypoints);
+        if (mySegment.routeGeometry && mySegment.routeGeometry.length > 0) {
+          setRouteGeometry(mySegment.routeGeometry);
+        }
       } else {
         const lastCompleted = completed[completed.length - 1];
         if (lastCompleted && lastCompleted.waypoints.length > 0) {
@@ -93,7 +118,10 @@ export function SimulationProvider({ children }) {
   };
 
   const saveRoute = async (trackingNumber) => {
-    const { data } = await api.post('/simulation/route', { trackingNumber, waypoints });
+    const { data } = await api.post('/simulation/route', {
+      trackingNumber, waypoints,
+      routeGeometry: routeGeometry.length > 0 ? routeGeometry : undefined,
+    });
     return data;
   };
 
@@ -105,55 +133,49 @@ export function SimulationProvider({ children }) {
     setCurrentSimIndex(0);
     setSimParcelId(parcelId);
 
-    const segWaypoints = segment?.waypoints || waypoints;
-    let segStart = 0;
-    let step = 0;
-    let steps = 0;
-    let from = segWaypoints[0];
-    let to = segWaypoints[1];
+    const savedGeo = segment?.routeGeometry || [];
+    const path = savedGeo.length >= 2 ? savedGeo : (routeGeometry.length >= 2 ? routeGeometry : waypoints);
+    const lastMode = waypoints[waypoints.length - 1]?.transportMode || 'truck';
+    const totalSteps = computeSteps(path, lastMode);
+    let pos = 0;
 
     if (timerRef.current) clearInterval(timerRef.current);
 
-    const advance = () => {
-      if (segStart >= segWaypoints.length - 1) return false;
-      from = segWaypoints[segStart];
-      to = segWaypoints[segStart + 1];
-      const speed = SEGMENT_SPEEDS[to.transportMode] || SEGMENT_SPEEDS.truck;
-      const dist = Math.sqrt((to.lat - from.lat) ** 2 + (to.lng - from.lng) ** 2);
-      steps = Math.max(10, Math.floor(dist / speed));
-      step = 0;
-      return true;
-    };
-
-    advance();
-
     timerRef.current = setInterval(() => {
-      step += speedRef.current;
-      const fraction = step / steps;
-      const pos = interpolate(from, to, Math.min(fraction, 1));
-      setCurrentSimIndex(segStart + fraction);
+      pos += speedRef.current;
+      if (pos >= totalSteps - 1) {
+        clearInterval(timerRef.current);
+        setSimulating(false);
+        setCurrentSimIndex(path.length - 1);
+        api.post('/simulation/stop', { trackingNumber }).catch(() => {});
+        const last = path[path.length - 1];
+        if (socket && parcelId) {
+          socket.emit('location:update', { parcelId, lat: last.lat, lng: last.lng, carrierId: carrierId || undefined, carrierName: 'Simulation' });
+        }
+        return;
+      }
+
+      const fraction = pos / (totalSteps - 1);
+      const pathIdx = fraction * (path.length - 1);
+      const idx = Math.floor(pathIdx);
+      const frac = pathIdx - idx;
+      const from = path[idx];
+      const to = path[Math.min(idx + 1, path.length - 1)];
+      const current = interpolate(from, to, frac);
+
+      setCurrentSimIndex(pathIdx);
 
       if (socket && parcelId) {
         socket.emit('location:update', {
           parcelId,
-          lat: pos.lat,
-          lng: pos.lng,
+          lat: current.lat,
+          lng: current.lng,
           carrierId: carrierId || undefined,
           carrierName: 'Simulation',
         });
       }
-
-      if (fraction >= 1) {
-        segStart++;
-        if (!advance()) {
-          clearInterval(timerRef.current);
-          setSimulating(false);
-          setCurrentSimIndex(segWaypoints.length - 1);
-          api.post('/simulation/stop', { trackingNumber }).catch(() => {});
-        }
-      }
     }, 1000);
-  }, [waypoints]);
+  }, [waypoints, routeGeometry]);
 
   const stopSimulation = async (trackingNumber) => {
     try {
@@ -167,7 +189,7 @@ export function SimulationProvider({ children }) {
   return (
     <SimulationContext.Provider value={{
       simMode, toggleMode,
-      previousSegments,
+      previousSegments, routeGeometry,
       waypoints, setWaypoints, addWaypoint, updateWaypoint, removeWaypoint, clearWaypoints, saveRoute,
       simulating, currentSimIndex, simParcelId, speed, setSpeed,
       loadSimulationSegments, startSimulation, stopSimulation,

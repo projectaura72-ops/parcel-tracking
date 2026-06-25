@@ -22,13 +22,14 @@ function ClickHandler() {
   return null;
 }
 
-export default function RoutePlanner({ previousSegments = [], currentLocation, simulating, currentSimIndex, waypoints: propWaypoints } = {}) {
+export default function RoutePlanner({ previousSegments = [], currentLocation, simulating, currentSimIndex, waypoints: propWaypoints, routeGeometry: propGeometry } = {}) {
   const ctx = useSimulation();
   const wp = propWaypoints || ctx.waypoints;
   const updateWaypoint = ctx.updateWaypoint;
   const removeWaypoint = ctx.removeWaypoint;
   const simMode = ctx.simMode;
   const prevSegs = previousSegments.length > 0 ? previousSegments : ctx.previousSegments;
+  const roadGeo = propGeometry || ctx.routeGeometry;
 
   const allCoords = wp.map((w) => [w.lat, w.lng]);
   const center = currentLocation ? [currentLocation.lat, currentLocation.lng] : (wp.length > 0 ? allCoords[0] : [20, 0]);
@@ -129,8 +130,17 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
             </Marker>
           ))}
 
-          {/* Current carrier's planned route line */}
-          {allCoords.length > 1 && !simulating && (
+          {/* Road-based route geometry */}
+          {roadGeo.length >= 2 && !simulating && (
+            <Polyline
+              positions={roadGeo.map((p) => [p.lat, p.lng])}
+              color="#6b7280"
+              weight={4}
+              opacity={0.7}
+            />
+          )}
+          {/* Fallback straight-line when no road geometry */}
+          {roadGeo.length < 2 && allCoords.length > 1 && !simulating && (
             <Polyline positions={allCoords} color="#6b7280" weight={3} dashArray="8 4" />
           )}
 

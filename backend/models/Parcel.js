@@ -28,11 +28,17 @@ const simulationWaypointSchema = new mongoose.Schema({
   transportMode: { type: String, enum: ['truck', 'ship', 'plane'], default: 'truck' },
 }, { _id: false });
 
+const routePointSchema = new mongoose.Schema({
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+}, { _id: false });
+
 const simulationSegmentSchema = new mongoose.Schema({
   carrierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   carrierName: { type: String },
   color: { type: String },
   waypoints: [simulationWaypointSchema],
+  routeGeometry: [routePointSchema],
   status: { type: String, enum: ['planned', 'active', 'completed'], default: 'planned' },
 }, { _id: false });
 

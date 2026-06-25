@@ -11,7 +11,7 @@ function getCarrierColor(segments, carrierId) {
 
 exports.saveRoute = async (req, res, next) => {
   try {
-    const { trackingNumber, waypoints } = req.body;
+    const { trackingNumber, waypoints, routeGeometry } = req.body;
     const parcel = await Parcel.findOne({ trackingNumber });
     if (!parcel) return res.status(404).json({ message: 'Parcel not found' });
 
@@ -25,6 +25,7 @@ exports.saveRoute = async (req, res, next) => {
       carrierName: req.user.name || 'Carrier',
       color,
       waypoints,
+      routeGeometry: routeGeometry || [],
       status: 'planned',
     });
 
