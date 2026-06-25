@@ -89,6 +89,24 @@ exports.getAssignedParcels = async (req, res, next) => {
   }
 };
 
+exports.deleteParcel = async (req, res, next) => {
+  try {
+    const userId = resolveUserId(req);
+    const parcel = await Parcel.findById(req.params.parcelId);
+    if (!parcel) return res.status(404).json({ message: 'Parcel not found' });
+
+    const parcelCarrier = parcel.currentCarrier?._id || parcel.currentCarrier;
+    if (parcelCarrier?.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'You can only delete your own claimed parcels' });
+    }
+
+    await Parcel.findByIdAndDelete(req.params.parcelId);
+    res.json({ message: 'Parcel deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.completeSegment = async (req, res, next) => {
   try {
     const userId = resolveUserId(req);

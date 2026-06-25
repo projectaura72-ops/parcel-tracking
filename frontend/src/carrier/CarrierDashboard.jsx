@@ -149,6 +149,19 @@ export default function CarrierDashboard() {
     }
   };
 
+  const handleDeleteParcel = async (parcelId, e) => {
+    e.stopPropagation();
+    if (!confirm('Delete this parcel?')) return;
+    try {
+      const headers = simMode && simOverride ? { 'x-sim-carrier-id': simOverride } : {};
+      await api.delete(`/carriers/${parcelId}`, { headers });
+      setParcels((prev) => prev.filter((p) => p._id !== parcelId));
+      if (selected?._id === parcelId) setSelected(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error deleting parcel');
+    }
+  };
+
   const handleSaveRoute = async () => {
     if (!selected) return;
     const cId = simOverride || profile?._id;
@@ -260,7 +273,7 @@ export default function CarrierDashboard() {
               <div
                 key={p._id}
                 onClick={() => { setSelected(p); setShowClaim(false); }}
-                className={`bg-white p-2 rounded shadow cursor-pointer border-l-4 transition-colors text-xs ${
+                className={`bg-white p-2 rounded shadow cursor-pointer border-l-4 transition-colors text-xs group ${
                   selected?._id === p._id ? 'border-blue-500 ring-1 ring-blue-200' :
                   p.status === 'delivered' ? 'border-green-500' :
                   p.status === 'in_transit' ? 'border-blue-500' : 'border-gray-300'
@@ -268,9 +281,16 @@ export default function CarrierDashboard() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold truncate">{p.name}</p>
-                  {isCurrentCarrier(p) && (
-                    <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded flex-shrink-0">Yours</span>
-                  )}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {isCurrentCarrier(p) && (
+                      <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded">Yours</span>
+                    )}
+                    <button
+                      onClick={(e) => handleDeleteParcel(p._id, e)}
+                      className="text-red-400 hover:text-red-600 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete parcel"
+                    >✕</button>
+                  </div>
                 </div>
                 <p className="text-[10px] text-gray-400 font-mono">{p.trackingNumber}</p>
                 <span className="text-[10px] capitalize text-gray-500">{p.status.replace('_', ' ')}</span>
