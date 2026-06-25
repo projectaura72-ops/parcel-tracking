@@ -207,6 +207,8 @@ export default function CarrierDashboard() {
         p.currentCarrier === profile?._id
       ));
 
+  const displayedParcel = selected || parcelList[0] || null;
+
   const simHeaderText = simOverride
     ? `Simulating as: ${allCarriers.find((c) => c._id === simOverride)?.name || simOverride}`
     : '';
@@ -428,12 +430,12 @@ export default function CarrierDashboard() {
 
         {/* RIGHT: Map only (3/4) */}
         <div className="lg:col-span-3 min-h-0 h-full">
-          {selected ? (
+          {displayedParcel ? (
             <div className="h-full min-h-0 flex flex-col">
               {simMode ? (
                 <RoutePlanner
                   previousSegments={previousSegments}
-                  currentLocation={selected.currentLocation}
+                  currentLocation={displayedParcel.currentLocation}
                   simulating={simulating}
                   currentSimIndex={currentSimIndex}
                   waypoints={waypoints}
@@ -441,8 +443,8 @@ export default function CarrierDashboard() {
                 />
               ) : (
                 <TrackingMap
-                  position={selected.currentLocation}
-                  routeSegments={selected.routeSegments || []}
+                  position={displayedParcel.currentLocation}
+                  routeSegments={displayedParcel.routeSegments || []}
                   height="h-full"
                 />
               )}
