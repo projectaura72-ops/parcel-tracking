@@ -39,7 +39,7 @@ export default function Layout() {
           </div>
         </div>
       </nav>
-      <main className="flex-1 h-full min-h-0 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 w-full">
+      <main className="flex-1 flex flex-col min-h-0 h-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 w-full">
         <Outlet />
       </main>
     </div>
