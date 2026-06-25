@@ -65,22 +65,27 @@ export function SimulationProvider({ children }) {
     }
     try {
       const { data } = await api.get(`/simulation/route/${trackingNumber}`);
-      const completed = data.filter((s) => s.status === 'completed');
-      setPreviousSegments(completed);
+      const allCompleted = data.filter((s) => s.status === 'completed');
 
       const mySegment = data.find(
         (s) => s.carrierId && carrierId && s.carrierId.toString() === carrierId.toString() && (s.status === 'planned' || s.status === 'active')
       );
+
+      const others = data.filter(
+        (s) => !(s.carrierId && carrierId && s.carrierId.toString() === carrierId.toString() && (s.status === 'planned' || s.status === 'active'))
+      );
+      setPreviousSegments(others);
+
       if (mySegment) {
         setWaypoints(mySegment.waypoints);
         if (mySegment.routeGeometry && mySegment.routeGeometry.length > 0) {
           setRouteGeometry(mySegment.routeGeometry);
         }
       } else {
-        const lastCompleted = completed[completed.length - 1];
+        const lastCompleted = allCompleted[allCompleted.length - 1];
         if (lastCompleted && lastCompleted.waypoints.length > 0) {
           const lastWp = lastCompleted.waypoints[lastCompleted.waypoints.length - 1];
-          const nextLabel = LABELS[completed.length];
+          const nextLabel = LABELS[allCompleted.length];
           setWaypoints([{ ...lastWp, label: nextLabel }]);
         } else {
           setWaypoints([]);
