@@ -65,12 +65,6 @@ export default function CarrierDashboard() {
   }, [fetchParcels]);
 
   useEffect(() => {
-    if (!selected && parcelList.length > 0) {
-      setSelected(parcelList[0]);
-    }
-  }, [selected, parcelList]);
-
-  useEffect(() => {
     if (simMode && selected) {
       loadSimulationSegments(selected.trackingNumber, activeUserId);
     }
@@ -219,8 +213,14 @@ export default function CarrierDashboard() {
     ? `Simulating as: ${allCarriers.find((c) => c._id === simOverride)?.name || simOverride}`
     : '';
 
+  useEffect(() => {
+    if (!selected && parcelList.length > 0) {
+      setSelected(parcelList[0]);
+    }
+  }, [selected, parcelList]);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-slate-500 mb-1">Carrier Dashboard</p>
@@ -246,7 +246,7 @@ export default function CarrierDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-[60vh]">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-0 h-full">
         {/* LEFT: All controls */}
         <div className="lg:col-span-1 flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm min-h-0">
           <div className="space-y-3">
