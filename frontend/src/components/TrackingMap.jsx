@@ -9,7 +9,7 @@ function AutoFollow({ position }) {
   return null;
 }
 
-export default function TrackingMap({ position, routeSegments = [] }) {
+export default function TrackingMap({ position, routeSegments = [], parcelId }) {
   const pos = position ? [position.lat, position.lng] : [20, 0];
   const zoom = position ? 13 : 2;
 
@@ -37,14 +37,24 @@ export default function TrackingMap({ position, routeSegments = [] }) {
           );
         })}
       </MapContainer>
+      {parcelId && (
+        <div className="absolute top-2 left-2 bg-white/90 rounded-lg shadow p-2 text-xs z-[1000]">
+          <div className="text-[9px] uppercase tracking-[0.25em] text-slate-500">Parcel ID</div>
+          <div className="font-semibold text-slate-900 truncate max-w-[170px]">{parcelId}</div>
+        </div>
+      )}
       {routeSegments.length > 0 && (
         <div className="absolute top-2 right-2 bg-white/90 rounded-lg shadow p-2 text-xs space-y-1 z-[1000]">
           {routeSegments.map((seg, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className={`w-3 h-1 rounded-full ${seg.status === 'completed' ? 'opacity-50' : ''}`} style={{ backgroundColor: seg.color }} />
-              <span>{seg.carrierName}</span>
-              {seg.status === 'completed' && <span className="text-green-600 text-[10px]">✓</span>}
-              {seg.fromLabel && <span className="text-gray-400 text-[10px]">{seg.fromLabel}</span>}
+            <div key={i} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className={`w-3 h-1 rounded-full ${seg.status === 'completed' ? 'opacity-50' : ''}`} style={{ backgroundColor: seg.color }} />
+                <span className="font-semibold">{seg.carrierName}</span>
+                {seg.status === 'completed' && <span className="text-green-600 text-[10px]">✓</span>}
+              </div>
+              <div className="text-gray-500 text-[10px] truncate">
+                {seg.fromLabel || seg.toLabel || 'Route segment'}
+              </div>
             </div>
           ))}
         </div>

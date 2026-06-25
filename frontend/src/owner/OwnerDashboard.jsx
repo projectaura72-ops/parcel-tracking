@@ -34,7 +34,14 @@ export default function OwnerDashboard() {
       );
     };
     socket.on('location:update', handler);
-    return () => socket.off('location:update', handler);
+    socket.onAny((event, data) => {
+      if (!event.startsWith('parcel:location:')) return;
+      handler(data);
+    });
+    return () => {
+      socket.off('location:update', handler);
+      socket.offAny();
+    };
   }, [socket]);
 
   const handleCreate = async (e) => {
@@ -111,6 +118,7 @@ export default function OwnerDashboard() {
                 <TrackingMap
                   position={selected.currentLocation}
                   routeSegments={selected.routeSegments || []}
+                  parcelId={selected.trackingNumber || selected._id}
                 />
               </div>
               <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm grid gap-4 sm:grid-cols-2">

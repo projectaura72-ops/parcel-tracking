@@ -35,6 +35,7 @@ export function SimulationProvider({ children }) {
   const [simulating, setSimulating] = useState(false);
   const [currentSimIndex, setCurrentSimIndex] = useState(0);
   const [simParcelId, setSimParcelId] = useState(null);
+  const [simCompletedFor, setSimCompletedFor] = useState(null);
   const [speed, setSpeed] = useState(1);
   const [routeGeometry, setRouteGeometry] = useState([]);
   const speedRef = useRef(1);
@@ -119,6 +120,7 @@ export function SimulationProvider({ children }) {
 
     setSimulating(false);
     setSimParcelId(null);
+    setSimCompletedFor(parcelId);
 
     if (path && path.length >= 2) {
       setRouteGeometry(path);
@@ -205,6 +207,7 @@ export function SimulationProvider({ children }) {
     setSimulating(true);
     setCurrentSimIndex(0);
     setSimParcelId(parcelId);
+    setSimCompletedFor(null);
 
     const path = routeGeometry.length >= 2 ? routeGeometry : waypoints;
     if (path.length < 2) {
@@ -268,7 +271,7 @@ export function SimulationProvider({ children }) {
       setSimParcelId(null);
       return false;
     }
-  }, [waypoints, routeGeometry]);
+  }, [completeSimulation, routeGeometry, waypoints]);
 
   const stopSimulation = async (trackingNumber, carrierId, onComplete) => {
     if (timerRef.current) {
@@ -277,6 +280,7 @@ export function SimulationProvider({ children }) {
     }
     setSimulating(false);
     setSimParcelId(null);
+    setSimCompletedFor(null);
     if (!trackingNumber) {
       if (typeof onComplete === 'function') onComplete();
       return false;
@@ -301,7 +305,7 @@ export function SimulationProvider({ children }) {
       simMode, toggleMode,
       previousSegments, routeGeometry,
       waypoints, setWaypoints, addWaypoint, updateWaypoint, removeWaypoint, clearWaypoints, saveRoute,
-      simulating, currentSimIndex, simParcelId, speed, setSpeed,
+      simulating, currentSimIndex, simParcelId, simCompletedFor, speed, setSpeed,
       loadSimulationSegments, startSimulation, stopSimulation,
     }}>
       {children}

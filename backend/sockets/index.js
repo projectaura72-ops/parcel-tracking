@@ -57,7 +57,9 @@ function setupSocket(io) {
           message: `Location updated to [${lat}, ${lng}]`,
         });
 
-        io.emit(`parcel:location:${parcelId}`, { lat, lng, parcelId });
+        const payload = { lat, lng, parcelId };
+        io.emit('location:update', payload);
+        io.emit(`parcel:location:${parcelId}`, payload);
       } catch (err) {
         socket.emit('error', { message: err.message });
       }

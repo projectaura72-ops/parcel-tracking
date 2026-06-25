@@ -20,7 +20,7 @@ export default function CarrierDashboard() {
   const { profile } = useAuth();
   const {
     simMode, waypoints, previousSegments, routeGeometry, saveRoute, loadSimulationSegments,
-    startSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
+    startSimulation, simulating, currentSimIndex, simParcelId, simCompletedFor, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
   const MOCK_CARRIERS = [
@@ -73,12 +73,20 @@ export default function CarrierDashboard() {
 
   const prevSim = useRef(simulating);
   useEffect(() => {
-    if (prevSim.current && !simulating && selected) {
+    if (prevSim.current && !simulating && selected?.trackingNumber) {
       fetchParcels();
       loadSimulationSegments(selected.trackingNumber, activeUserId);
     }
     prevSim.current = simulating;
-  }, [simulating]);
+  }, [simulating, selected?.trackingNumber, activeUserId, fetchParcels, loadSimulationSegments]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const updated = parcels.find((p) => p._id === selected._id);
+    if (updated && updated !== selected) {
+      setSelected(updated);
+    }
+  }, [parcels, selected]);
 
   useEffect(() => {
     if (!socket) return;
@@ -97,7 +105,14 @@ export default function CarrierDashboard() {
       );
     };
     socket.on('location:update', handler);
-    return () => socket.off('location:update', handler);
+    socket.onAny((event, data) => {
+      if (!event.startsWith('parcel:location:')) return;
+      handler(data);
+    });
+    return () => {
+      socket.off('location:update', handler);
+      socket.offAny();
+    };
   }, [socket]);
 
   const sendLocation = useCallback(() => {
@@ -411,6 +426,13 @@ export default function CarrierDashboard() {
                 <div className="bg-green-50 border border-green-200 rounded p-1.5 text-[11px] text-green-800 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                   Parcel moving...
+                </div>
+              )}
+
+              {simCompletedFor === selected?._id && !simulating && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-1.5 text-[11px] text-blue-800 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                  Simulation arrived at destination
                 </div>
               )}
             </div>
