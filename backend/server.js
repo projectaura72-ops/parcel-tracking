@@ -9,14 +9,37 @@ const setupSocket = require('./sockets');
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = [
+  config.clientUrl,
+  process.env.PUBLIC_CLIENT_URL,
+  'https://projectaura72-ops.github.io',
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+  credentials: true,
+};
+
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`Origin ${origin} not allowed by Socket.IO CORS`));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
-app.use(cors({
-  origin: (origin, cb) => { cb(null, true); },
-  credentials: true,
-}));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', require('./routes/auth'));
