@@ -9,20 +9,31 @@ function getCarrierColor(segments, carrierId) {
   return available || CARRIER_COLORS[segments.length % CARRIER_COLORS.length];
 }
 
+function resolveUserId(req) {
+  return req.headers['x-sim-carrier-id'] || req.user._id;
+}
+
+function resolveCarrierName(req) {
+  return req.headers['x-sim-carrier-name'] || req.user.name || 'Carrier';
+}
+
 exports.saveRoute = async (req, res, next) => {
   try {
     const { trackingNumber, waypoints, routeGeometry } = req.body;
     const parcel = await Parcel.findOne({ trackingNumber });
     if (!parcel) return res.status(404).json({ message: 'Parcel not found' });
 
+    const userId = resolveUserId(req);
+    const carrierName = resolveCarrierName(req);
+
     parcel.simulationSegments = parcel.simulationSegments.filter(
-      (s) => !(s.carrierId && s.carrierId.toString() === req.user._id.toString() && s.status === 'planned')
+      (s) => !(s.carrierId && s.carrierId.toString() === userId.toString() && s.status === 'planned')
     );
 
-    const color = getCarrierColor(parcel.simulationSegments, req.user._id);
+    const color = getCarrierColor(parcel.simulationSegments, userId);
     parcel.simulationSegments.push({
-      carrierId: req.user._id,
-      carrierName: req.user.name || 'Carrier',
+      carrierId: userId,
+      carrierName,
       color,
       waypoints,
       routeGeometry: routeGeometry || [],
@@ -52,8 +63,9 @@ exports.startSimulation = async (req, res, next) => {
     const parcel = await Parcel.findOne({ trackingNumber });
     if (!parcel) return res.status(404).json({ message: 'Parcel not found' });
 
+    const userId = resolveUserId(req);
     const segment = parcel.simulationSegments.find(
-      (s) => s.carrierId && s.carrierId.toString() === req.user._id.toString() && s.status === 'planned'
+      (s) => s.carrierId && s.carrierId.toString() === userId.toString() && s.status === 'planned'
     );
     if (!segment) return res.status(400).json({ message: 'No planned route for this carrier' });
     if (!segment.waypoints || segment.waypoints.length < 2) {
@@ -62,7 +74,7 @@ exports.startSimulation = async (req, res, next) => {
 
     segment.status = 'active';
     parcel.status = 'in_transit';
-    parcel.currentCarrier = req.user._id;
+    parcel.currentCarrier = userId;
     parcel.currentLocation = {
       lat: segment.waypoints[0].lat,
       lng: segment.waypoints[0].lng,
@@ -71,7 +83,7 @@ exports.startSimulation = async (req, res, next) => {
 
     await TrackingHistory.create({
       parcelId: parcel._id,
-      carrierId: req.user._id,
+      carrierId: userId,
       status: 'in_transit',
       location: parcel.currentLocation,
       message: 'Simulation started',
@@ -89,8 +101,9 @@ exports.stopSimulation = async (req, res, next) => {
     const parcel = await Parcel.findOne({ trackingNumber });
     if (!parcel) return res.status(404).json({ message: 'Parcel not found' });
 
+    const userId = resolveUserId(req);
     const segment = parcel.simulationSegments.find(
-      (s) => s.carrierId && s.carrierId.toString() === req.user._id.toString() && s.status === 'active'
+      (s) => s.carrierId && s.carrierId.toString() === userId.toString() && s.status === 'active'
     );
     if (segment) {
       segment.status = 'completed';
@@ -104,7 +117,7 @@ exports.stopSimulation = async (req, res, next) => {
 
     await TrackingHistory.create({
       parcelId: parcel._id,
-      carrierId: req.user._id,
+      carrierId: userId,
       status: 'in_transit',
       location: parcel.currentLocation,
       message: 'Simulation segment completed',

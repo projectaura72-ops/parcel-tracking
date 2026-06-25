@@ -22,11 +22,23 @@ export default function CarrierDashboard() {
     startSimulation, stopSimulation, simulating, currentSimIndex, simParcelId, speed, setSpeed, clearWaypoints
   } = useSimulation();
 
+  const MOCK_CARRIERS = [
+    { _id: '000000000000000000000001', name: 'Mock Carrier 1' },
+    { _id: '000000000000000000000002', name: 'Mock Carrier 2' },
+    { _id: '000000000000000000000003', name: 'Mock Carrier 3' },
+  ];
+
+  const allCarriers = simMode
+    ? [...MOCK_CARRIERS, ...carriers.filter((c) => !MOCK_CARRIERS.find((m) => m._id === c._id))]
+    : carriers;
+
   const activeUserId = simMode && simOverride ? simOverride : profile?._id;
 
   useEffect(() => {
-    api.get('/auth/carriers').then(({ data }) => setCarriers(data)).catch(() => {});
-  }, []);
+    if (!simMode) {
+      api.get('/auth/carriers').then(({ data }) => setCarriers(data)).catch(() => {});
+    }
+  }, [simMode]);
 
   const fetchParcels = useCallback(async () => {
     let data;
@@ -139,7 +151,9 @@ export default function CarrierDashboard() {
 
   const handleSaveRoute = async () => {
     if (!selected) return;
-    await saveRoute(selected.trackingNumber);
+    const cId = simOverride || profile?._id;
+    const cName = allCarriers.find((c) => c._id === cId)?.name || profile?.name;
+    await saveRoute(selected.trackingNumber, cId, cName);
     alert('Route saved!');
   };
 
@@ -151,7 +165,8 @@ export default function CarrierDashboard() {
 
   const handleStopSim = async () => {
     if (!selected) return;
-    await stopSimulation(selected.trackingNumber);
+    const cId = simOverride || profile?._id;
+    await stopSimulation(selected.trackingNumber, cId);
     fetchParcels();
   };
 
@@ -180,14 +195,14 @@ export default function CarrierDashboard() {
       ));
 
   const simHeaderText = simOverride
-    ? `Simulating as: ${carriers.find((c) => c._id === simOverride)?.name || simOverride}`
+    ? `Simulating as: ${allCarriers.find((c) => c._id === simOverride)?.name || simOverride}`
     : '';
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <h1 className="text-xl font-bold">Carrier Dashboard</h1>
-        {simMode && carriers.length > 0 && (
+        {simMode && allCarriers.length > 0 && (
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-500">Simulate as:</label>
             <select
@@ -196,7 +211,7 @@ export default function CarrierDashboard() {
               className="border rounded px-2 py-1 text-sm"
             >
               <option value="">Me ({profile?.name})</option>
-              {carriers.filter((c) => c._id !== profile?._id).map((c) => (
+              {allCarriers.filter((c) => c._id !== profile?._id).map((c) => (
                 <option key={c._id} value={c._id}>{c.name}</option>
               ))}
             </select>

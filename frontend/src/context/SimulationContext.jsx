@@ -117,17 +117,21 @@ export function SimulationProvider({ children }) {
     }
   };
 
-  const saveRoute = async (trackingNumber) => {
+  const saveRoute = async (trackingNumber, carrierId, carrierName) => {
+    const headers = {};
+    if (carrierId) headers['x-sim-carrier-id'] = carrierId;
+    if (carrierName) headers['x-sim-carrier-name'] = carrierName;
     const { data } = await api.post('/simulation/route', {
       trackingNumber, waypoints,
       routeGeometry: routeGeometry.length > 0 ? routeGeometry : undefined,
-    });
+    }, { headers });
     return data;
   };
 
   const startSimulation = useCallback(async (parcelId, trackingNumber, socket, carrierId) => {
     if (waypoints.length < 2) return;
-    const { data } = await api.post('/simulation/start', { trackingNumber });
+    const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
+    const { data } = await api.post('/simulation/start', { trackingNumber }, { headers });
     const segment = data.segment || data.parcel?.simulationSegments?.slice(-1)[0];
     setSimulating(true);
     setCurrentSimIndex(0);
@@ -147,7 +151,8 @@ export function SimulationProvider({ children }) {
         clearInterval(timerRef.current);
         setSimulating(false);
         setCurrentSimIndex(path.length - 1);
-        api.post('/simulation/stop', { trackingNumber }).catch(() => {});
+        const stopHeaders = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
+        api.post('/simulation/stop', { trackingNumber }, { headers: stopHeaders }).catch(() => {});
         const last = path[path.length - 1];
         if (socket && parcelId) {
           socket.emit('location:update', { parcelId, lat: last.lat, lng: last.lng, carrierId: carrierId || undefined, carrierName: 'Simulation' });
@@ -177,9 +182,10 @@ export function SimulationProvider({ children }) {
     }, 1000);
   }, [waypoints, routeGeometry]);
 
-  const stopSimulation = async (trackingNumber) => {
+  const stopSimulation = async (trackingNumber, carrierId) => {
     try {
-      await api.post('/simulation/stop', { trackingNumber });
+      const headers = carrierId ? { 'x-sim-carrier-id': carrierId } : {};
+      await api.post('/simulation/stop', { trackingNumber }, { headers });
     } catch {}
     setSimulating(false);
     setSimParcelId(null);
