@@ -214,7 +214,7 @@ export default function CarrierDashboard() {
     : '';
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="h-full flex flex-col min-h-0">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-slate-500 mb-1">Carrier Dashboard</p>
@@ -240,7 +240,7 @@ export default function CarrierDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-4 h-full flex-1 min-h-0">
         {/* LEFT: All controls */}
         <div className="lg:col-span-1 flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm min-h-0">
           <div className="space-y-3">
@@ -429,31 +429,25 @@ export default function CarrierDashboard() {
         </div>
 
         {/* RIGHT: Map only (3/4) */}
-        <div className="lg:col-span-3 min-h-0 h-full">
-          {displayedParcel ? (
-            <div className="h-full min-h-0 flex flex-col">
-              {simMode ? (
-                <RoutePlanner
-                  previousSegments={previousSegments}
-                  currentLocation={displayedParcel.currentLocation}
-                  simulating={simulating}
-                  currentSimIndex={currentSimIndex}
-                  waypoints={waypoints}
-                  routeGeometry={routeGeometry}
-                />
-              ) : (
-                <TrackingMap
-                  position={displayedParcel.currentLocation}
-                  routeSegments={displayedParcel.routeSegments || []}
-                  height="h-full"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm flex items-center justify-center text-slate-400">
-              Select a parcel to view details
-            </div>
-          )}
+        <div className="lg:col-span-3 min-h-0 h-full flex">
+          <div className="h-full min-h-0 flex-1 flex flex-col">
+            {simMode ? (
+              <RoutePlanner
+                previousSegments={previousSegments}
+                currentLocation={displayedParcel?.currentLocation}
+                simulating={simulating}
+                currentSimIndex={currentSimIndex}
+                waypoints={waypoints}
+                routeGeometry={routeGeometry}
+              />
+            ) : (
+              <TrackingMap
+                position={displayedParcel?.currentLocation}
+                routeSegments={displayedParcel?.routeSegments || []}
+                height="h-full"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
