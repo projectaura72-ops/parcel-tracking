@@ -19,8 +19,8 @@ export default function TrackingMap({ position, routeSegments = [], height = 'h-
   const pos = [position.lat, position.lng];
 
   return (
-    <div className={`${height} rounded-lg overflow-hidden relative`}>
-      <MapContainer center={pos} zoom={13} className="h-full w-full">
+    <div className={`${height} rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden relative`}>
+      <MapContainer center={pos} zoom={13} className="h-full w-full rounded-3xl">
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <AutoFollow position={position} />
         <Marker position={pos} icon={icon}>

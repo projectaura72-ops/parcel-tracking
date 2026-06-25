@@ -213,15 +213,21 @@ export default function CarrierDashboard() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <h1 className="text-xl font-bold">Carrier Dashboard</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.35em] text-slate-500 mb-1">Carrier Dashboard</p>
+          <h1 className="text-3xl font-semibold text-slate-900">Shipments & live delivery tracking</h1>
+          {simHeaderText && (
+            <p className="mt-2 text-sm text-slate-500">{simHeaderText}</p>
+          )}
+        </div>
         {simMode && allCarriers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">Simulate as:</label>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
+            <label className="block text-xs text-slate-500 mb-2">Simulate as</label>
             <select
               value={simOverride}
               onChange={(e) => setSimOverride(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-300 focus:ring-blue-200"
             >
               <option value="">Me ({profile?.name})</option>
               {allCarriers.filter((c) => c._id !== profile?._id).map((c) => (
@@ -232,41 +238,38 @@ export default function CarrierDashboard() {
         )}
       </div>
 
-      {simHeaderText && (
-        <p className="text-xs text-purple-600 mb-1 flex-shrink-0 font-medium">{simHeaderText}</p>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1 min-h-0 h-full">
         {/* LEFT: All controls */}
-        <div className="lg:col-span-1 space-y-2 overflow-y-auto">
-          <button
-            onClick={() => setShowClaim(!showClaim)}
-            className="w-full bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm"
-          >
-            {showClaim ? 'Cancel' : '+ Claim Parcel'}
-          </button>
-
-          {showClaim && (
-            <div className="bg-white p-2 rounded-lg shadow">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Tracking code"
-                  value={trackingCode}
-                  onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
-                  className="border rounded px-2 py-1 text-xs w-full font-mono uppercase"
-                  onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
-                />
-                <button
-                  onClick={handleClaim}
-                  disabled={!trackingCode.trim()}
-                  className="bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 disabled:opacity-50"
-                >
-                  Go
-                </button>
+        <div className="lg:col-span-1 flex h-full flex-col gap-4 overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowClaim(!showClaim)}
+              className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              {showClaim ? 'Cancel' : '+ Claim Parcel'}
+            </button>
+            {showClaim && (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Tracking code"
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value.toUpperCase())}
+                    className="flex-1 rounded-2xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono uppercase text-slate-700 focus:border-blue-300 focus:outline-none"
+                    onKeyDown={(e) => e.key === 'Enter' && handleClaim()}
+                  />
+                  <button
+                    onClick={handleClaim}
+                    disabled={!trackingCode.trim()}
+                    className="rounded-2xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Go
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="space-y-1 max-h-[30vh] overflow-y-auto">
             {parcelList.map((p) => (
@@ -424,7 +427,7 @@ export default function CarrierDashboard() {
         </div>
 
         {/* RIGHT: Map only (3/4) */}
-        <div className="lg:col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0 h-full">
           {selected ? (
             simMode ? (
               <RoutePlanner
@@ -443,7 +446,7 @@ export default function CarrierDashboard() {
               />
             )
           ) : (
-            <div className="h-full bg-white rounded-lg shadow flex items-center justify-center text-gray-400">
+            <div className="h-full rounded-3xl border border-slate-200 bg-white shadow-sm flex items-center justify-center text-slate-400">
               Select a parcel to view details
             </div>
           )}

@@ -13,33 +13,33 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <nav className="bg-white shadow-sm border-b flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-bold text-lg text-blue-600">GoodsTracker</Link>
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <nav className="bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <Link to="/" className="font-semibold text-xl tracking-tight text-slate-900">GoodsTracker</Link>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
             {profile?.role === 'carrier' && (
               <button
                 onClick={toggleMode}
                 disabled={simulating}
-                className={`text-sm px-3 py-1 rounded border transition-colors ${
+                className={`rounded-lg border px-3 py-1.5 transition shadow-sm ${
                   simMode
-                    ? 'bg-purple-100 border-purple-300 text-purple-700'
-                    : 'bg-gray-100 border-gray-300 text-gray-600'
-                } ${simulating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-80'}`}
+                    ? 'bg-slate-100 border-slate-300 text-slate-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                } ${simulating ? 'opacity-60 cursor-not-allowed' : 'hover:shadow'} `}
               >
-                {simMode ? '🖥 Simulation' : '📍 Real'}
+                {simMode ? 'Simulation mode' : 'Real mode'}
               </button>
             )}
-            <span className="text-sm text-gray-500 capitalize hidden sm:inline">{profile?.role}</span>
-            <span className="text-sm text-gray-700">{profile?.name}</span>
-            <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-700">
+            <span className="hidden sm:inline text-slate-500 capitalize">{profile?.role}</span>
+            <span className="font-medium text-slate-700">{profile?.name}</span>
+            <button onClick={handleLogout} className="rounded-lg bg-red-50 px-3 py-1.5 text-red-600 hover:bg-red-100 transition">
               Logout
             </button>
           </div>
         </div>
       </nav>
-      <main className="flex-1 min-h-0 max-w-7xl mx-auto p-2 sm:p-4 w-full">
+      <main className="flex-1 min-h-0 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 w-full">
         <Outlet />
       </main>
     </div>

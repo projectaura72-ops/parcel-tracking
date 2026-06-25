@@ -30,41 +30,45 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setTab('parcels')} className={`px-4 py-2 rounded ${tab === 'parcels' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Parcels
-        </button>
-        <button onClick={() => setTab('users')} className={`px-4 py-2 rounded ${tab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Users
-        </button>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-slate-900">Admin Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">Overview of parcels and platform users.</p>
+        </div>
+        <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 shadow-sm">
+          <button onClick={() => setTab('parcels')} className={`rounded-full px-4 py-2 text-sm font-medium transition ${tab === 'parcels' ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:bg-white'}`}>
+            Parcels
+          </button>
+          <button onClick={() => setTab('users')} className={`rounded-full px-4 py-2 text-sm font-medium transition ${tab === 'users' ? 'bg-white text-slate-900 shadow' : 'text-slate-600 hover:bg-white'}`}>
+            Users
+          </button>
+        </div>
       </div>
 
       {tab === 'parcels' && (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-slate-600 uppercase tracking-[0.06em] text-[11px]">
               <tr>
-                <th className="text-left p-3">Tracking</th>
-                <th className="text-left p-3">Name</th>
-                <th className="text-left p-3">Owner</th>
-                <th className="text-left p-3">Carrier</th>
-                <th className="text-left p-3">Status</th>
-                <th className="text-left p-3">Actions</th>
+                <th className="text-left px-4 py-4">Tracking</th>
+                <th className="text-left px-4 py-4">Name</th>
+                <th className="text-left px-4 py-4">Owner</th>
+                <th className="text-left px-4 py-4">Carrier</th>
+                <th className="text-left px-4 py-4">Status</th>
+                <th className="text-left px-4 py-4">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 bg-white">
               {parcels.map((p) => (
-                <tr key={p._id} className="border-t">
-                  <td className="p-3 font-mono text-xs">{p.trackingNumber}</td>
-                  <td className="p-3">{p.name}</td>
-                  <td className="p-3">{p.ownerId?.name || 'N/A'}</td>
-                  <td className="p-3">{p.currentCarrier?.name || 'Unassigned'}</td>
-                  <td className="p-3 capitalize">{p.status}</td>
-                  <td className="p-3">
-                    <button onClick={() => handleAssign(p._id)} className="text-blue-600 hover:underline text-xs">
+                <tr key={p._id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{p.trackingNumber}</td>
+                  <td className="px-4 py-3 text-slate-800">{p.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{p.ownerId?.name || 'N/A'}</td>
+                  <td className="px-4 py-3 text-slate-600">{p.currentCarrier?.name || 'Unassigned'}</td>
+                  <td className="px-4 py-3 capitalize text-slate-700">{p.status}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => handleAssign(p._id)} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-600 transition hover:bg-blue-100">
                       Assign
                     </button>
                   </td>
@@ -76,21 +80,21 @@ export default function AdminDashboard() {
       )}
 
       {tab === 'users' && (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-slate-600 uppercase tracking-[0.06em] text-[11px]">
               <tr>
-                <th className="text-left p-3">Name</th>
-                <th className="text-left p-3">Email</th>
-                <th className="text-left p-3">Role</th>
+                <th className="text-left px-4 py-4">Name</th>
+                <th className="text-left px-4 py-4">Email</th>
+                <th className="text-left px-4 py-4">Role</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 bg-white">
               {users.map((u) => (
-                <tr key={u._id} className="border-t">
-                  <td className="p-3">{u.name}</td>
-                  <td className="p-3">{u.email}</td>
-                  <td className="p-3 capitalize">{u.role}</td>
+                <tr key={u._id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-slate-800">{u.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                  <td className="px-4 py-3 capitalize text-slate-700">{u.role}</td>
                 </tr>
               ))}
             </tbody>

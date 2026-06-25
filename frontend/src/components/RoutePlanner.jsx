@@ -50,8 +50,8 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden flex flex-col h-full">
-      <div className="p-3 bg-gray-50 border-b text-sm text-gray-500 flex items-center justify-between flex-shrink-0">
+    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full">
+      <div className="p-3 bg-slate-50 border-b border-slate-200 text-sm text-slate-500 flex items-center justify-between flex-shrink-0">
         <span>{simulating ? 'Simulation running — parcel moving along route' : 'Click on the map to place your waypoints'}</span>
         {prevSegs.length > 0 && (
           <span className="text-xs text-gray-400">{prevSegs.length} carrier(s) completed before you</span>

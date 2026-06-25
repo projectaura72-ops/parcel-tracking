@@ -47,67 +47,90 @@ export default function OwnerDashboard() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">My Parcels</h1>
-        <button onClick={() => setShowCreate(!showCreate)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-slate-900">My Parcels</h1>
+          <p className="mt-1 text-sm text-slate-500">Create new shipments and review active tracking details.</p>
+        </div>
+        <button onClick={() => setShowCreate(!showCreate)} className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
           {showCreate ? 'Cancel' : 'New Parcel'}
         </button>
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="bg-white p-4 rounded-lg shadow mb-4 grid grid-cols-2 gap-3">
-          <input name="name" placeholder="Parcel name" required className="border rounded px-3 py-2 col-span-2" />
-          <input name="description" placeholder="Description" className="border rounded px-3 py-2 col-span-2" />
-          <input name="origin" placeholder="Origin" required className="border rounded px-3 py-2" />
-          <input name="destination" placeholder="Destination" required className="border rounded px-3 py-2" />
-          <button type="submit" className="bg-green-600 text-white py-2 rounded hover:bg-green-700 col-span-2">
-            Create
+        <form onSubmit={handleCreate} className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input name="name" placeholder="Parcel name" required className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
+            <input name="description" placeholder="Description" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input name="origin" placeholder="Origin" required className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
+            <input name="destination" placeholder="Destination" required className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 focus:border-blue-300 focus:outline-none" />
+          </div>
+          <button type="submit" className="rounded-2xl bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-green-700">
+            Create Parcel
           </button>
         </form>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-1 space-y-2">
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="space-y-3">
           {parcels.map((p) => (
             <div
               key={p._id}
               onClick={() => setSelected(p)}
-              className={`bg-white p-3 rounded-lg shadow cursor-pointer border-l-4 ${
-                p.status === 'delivered' ? 'border-green-500' : p.status === 'in_transit' ? 'border-blue-500' : 'border-gray-300'
+              className={`group cursor-pointer rounded-3xl border p-4 shadow-sm transition duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-lg ${
+                selected?._id === p._id ? 'border-slate-300 bg-slate-50 shadow-md' : 'border-slate-200 bg-white'
               }`}
             >
-              <p className="font-semibold">{p.name}</p>
-              <p className="text-xs text-gray-400 font-mono tracking-widest">{p.trackingNumber}</p>
-              <p className="text-xs capitalize mt-1">{p.status.replace('_', ' ')}</p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-slate-900">{p.name}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500 font-mono">{p.trackingNumber}</p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  p.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : p.status === 'in_transit' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {p.status.replace('_', ' ')}
+                </span>
+              </div>
+              <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                <p><span className="font-medium text-slate-800">Origin:</span> {p.origin || 'Unknown'}</p>
+                <p><span className="font-medium text-slate-800">Destination:</span> {p.destination || 'Unknown'}</p>
+              </div>
             </div>
           ))}
-          {parcels.length === 0 && <p className="text-gray-400 text-center py-8">No parcels yet</p>}
+          {parcels.length === 0 && <p className="text-center text-slate-500 py-8">No parcels yet</p>}
         </div>
 
-        <div className="lg:col-span-2">
+        <div>
           {selected ? (
             <>
-              <TrackingMap
-                position={selected.currentLocation}
-                routeSegments={selected.routeSegments || []}
-              />
-              <div className="bg-white p-4 rounded-lg shadow mt-4 grid grid-cols-2 gap-4">
+              <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <TrackingMap
+                  position={selected.currentLocation}
+                  routeSegments={selected.routeSegments || []}
+                />
+              </div>
+              <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm grid gap-4 sm:grid-cols-2">
                 <div>
-                  <h2 className="font-bold text-lg">{selected.name}</h2>
-                  <p className="text-lg font-mono tracking-widest text-blue-600">{selected.trackingNumber}</p>
+                  <h2 className="text-xl font-semibold text-slate-900">{selected.name}</h2>
+                  <p className="mt-2 text-sm font-mono tracking-[0.18em] text-sky-600">{selected.trackingNumber}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm">Status: <span className="capitalize font-semibold">{selected.status}</span></p>
-                  <p className="text-sm">Carrier: {selected.currentCarrier?.name || 'Not assigned'}</p>
+                  <p className="text-sm text-slate-600">Status</p>
+                  <p className="mt-1 text-base font-semibold capitalize text-slate-900">{selected.status}</p>
+                  <p className="mt-3 text-sm text-slate-600">Carrier</p>
+                  <p className="mt-1 text-base text-slate-900">{selected.currentCarrier?.name || 'Not assigned'}</p>
                 </div>
-                <div className="col-span-2 text-sm text-gray-500">
-                  <p>From: {selected.origin} → To: {selected.destination}</p>
+                <div className="sm:col-span-2 text-sm text-slate-600">
+                  <p><span className="font-medium text-slate-900">Route:</span> {selected.origin} → {selected.destination}</p>
                 </div>
               </div>
             </>
           ) : (
-            <div className="bg-white rounded-lg shadow h-[55vh] flex items-center justify-center text-gray-400">
+            <div className="rounded-3xl border border-slate-200 bg-white shadow-sm h-[55vh] flex items-center justify-center text-slate-400">
               Select a parcel to view tracking
             </div>
           )}

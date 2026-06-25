@@ -17,20 +17,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-2 text-center">GoodsTracker</h1>
-        <p className="text-gray-500 text-sm text-center mb-6">Select a role to continue</p>
-        {roles.map((r) => (
-          <button
-            key={r.key}
-            onClick={() => handleSelect(r.key)}
-            className="w-full text-left px-4 py-3 mb-2 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition flex items-center gap-3"
-          >
-            <span className="text-2xl">{r.emoji}</span>
-            <span className="font-medium">{r.label}</span>
-          </button>
-        ))}
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8">
+      <div className="w-full max-w-md bg-white border border-slate-200 shadow-sm rounded-3xl p-8">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-semibold text-slate-900">GoodsTracker</h1>
+          <p className="mt-2 text-slate-500">Sign in to manage and track shipments with clarity.</p>
+        </div>
+        <div className="space-y-3">
+          {roles.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => handleSelect(r.key)}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left text-slate-700 transition hover:border-blue-300 hover:bg-white hover:shadow-sm flex items-center gap-4"
+            >
+              <span className="text-3xl">{r.emoji}</span>
+              <span className="font-medium">{r.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

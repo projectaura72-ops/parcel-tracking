@@ -28,33 +28,45 @@ export default function PublicTracking() {
   const { parcel, history } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-2">Tracking: {parcel.trackingNumber}</h1>
-        <p className="text-gray-500 mb-4">Status: <span className="font-semibold capitalize">{parcel.status}</span></p>
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-slate-900">Tracking {parcel.trackingNumber}</h1>
+              <p className="mt-2 text-sm text-slate-500">Real-time shipment status and history in one view.</p>
+            </div>
+            <p className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700">Status: <span className="font-semibold capitalize text-slate-900">{parcel.status}</span></p>
+          </div>
+        </div>
 
-        <div className="bg-white rounded-lg shadow h-[55vh] mb-6">
-          {parcel.currentLocation && (
-            <MapContainer center={[parcel.currentLocation.lat, parcel.currentLocation.lng]} zoom={13} className="h-full w-full rounded-lg">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm h-[55vh]">
+          {parcel.currentLocation ? (
+            <MapContainer center={[parcel.currentLocation.lat, parcel.currentLocation.lng]} zoom={13} className="h-full w-full">
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <Marker position={[parcel.currentLocation.lat, parcel.currentLocation.lng]}>
                 <Popup>Current Location</Popup>
               </Marker>
             </MapContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-slate-400">Location unavailable</div>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="font-semibold mb-3">Tracking History</h2>
-          {history?.length === 0 && <p className="text-gray-400">No history yet</p>}
-          <div className="space-y-2">
-            {history?.map((entry, i) => (
-              <div key={i} className="flex justify-between text-sm border-b pb-2">
-                <span className="capitalize">{entry.status.replace('_', ' ')}</span>
-                <span className="text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">Tracking History</h2>
+          {history?.length === 0 ? (
+            <p className="text-slate-500">No history yet</p>
+          ) : (
+            <div className="space-y-3">
+              {history.map((entry, i) => (
+                <div key={i} className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-between sm:items-center">
+                  <span className="text-sm capitalize text-slate-700">{entry.status.replace('_', ' ')}</span>
+                  <span className="text-xs text-slate-500">{new Date(entry.timestamp).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
