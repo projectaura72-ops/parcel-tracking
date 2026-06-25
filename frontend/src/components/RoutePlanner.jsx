@@ -134,17 +134,23 @@ export default function RoutePlanner({ previousSegments = [], currentLocation, s
           ))}
 
           {/* Road-based route geometry */}
-          {roadGeo.length >= 2 && !simulating && (
+          {roadGeo.length >= 2 && (
             <Polyline
               positions={roadGeo.map((p) => [p.lat, p.lng])}
               color="#6b7280"
               weight={4}
-              opacity={0.7}
+              opacity={simulating ? 0.5 : 0.7}
             />
           )}
           {/* Fallback straight-line when no road geometry */}
-          {roadGeo.length < 2 && allCoords.length > 1 && !simulating && (
-            <Polyline positions={allCoords} color="#6b7280" weight={3} dashArray="8 4" />
+          {roadGeo.length < 2 && allCoords.length > 1 && (
+            <Polyline
+              positions={allCoords}
+              color="#6b7280"
+              weight={3}
+              dashArray="8 4"
+              opacity={simulating ? 0.5 : 1}
+            />
           )}
 
           {/* Parcel icon during simulation */}
